@@ -1,73 +1,5 @@
 <?php
 session_start();
-include('../config/config.php');
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $formTypes = $_POST['types1'] ?? [];
-    $title = $_POST['title'] ?? '';
-    $description = $_POST['description'] ?? '';
-    $questions = $_POST['questions'] ?? [];
-    $types = $_POST['types'] ?? [];
-    $options = $_POST['options'] ?? [];
-    $radio_options = $_POST['radio_options'] ?? [];
-    $ratings = $_POST['rating'] ?? [];
-    $firstname = isset($_POST['firstname']) ? 1 : 0;
-    $lastname = isset($_POST['lastname']) ? 1 : 0;
-    $email = isset($_POST['email']) ? 1 : 0;
-    $number = isset($_POST['number']) ? 1 : 0;
-    $created_by = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-    $form_type = $_POST['form_type'] ?? ''; // Added missing form_type
-
-    $created_for = $_POST['created_for'] ?? 1;
-    $business_name = '';
-
-    if ($created_for === null) {
-        $created_for = 1;
-    }
-
-    if ($created_for !== 1) {
-        $stmt = $conn->prepare("SELECT business_name FROM users WHERE id = ?");
-        $stmt->execute([$created_for]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($user) {
-            $business_name = $user['business_name'];
-        } else {
-            $business_name = 'Aksharraj infotech';
-        }
-    }
-
-    // Sanitize business name consistently
-    $sanitized_business_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $business_name);
-    $sanitized_business_name = str_replace(' ', '_', $sanitized_business_name);
-    // $sanitized_business_name = strtolower($sanitized_business_name);
-
-    $formsBasePath = '../../forms/';
-    $businessFormsPath = $formsBasePath . $sanitized_business_name . '/';
-
-    // Create directory if it doesn't exist and not empty
-    if (!empty($sanitized_business_name) && !is_dir($businessFormsPath)) {
-        if (!mkdir($businessFormsPath, 0777, true)) {
-            throw new Exception("Failed to create directory: " . $businessFormsPath);
-        }
-    }
-
-    try {
-        $conn->beginTransaction();
-
-        // Insert form details
-        $stmt = $conn->prepare("INSERT INTO forms (title, description, form_type, created_by, created_for, firstname, lastname, email, number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $description, $form_type, $created_by, $created_for, $firstname, $lastname, $email, $number]);
-        $form_id = $conn->lastInsertId();
-        $formId = $form_id; // Set formId from the generated ID
-
-        // Generate form file
-        $formFileName = "feedback-form-{$form_id}.php";
-        $formFilePath = $businessFormsPath . $formFileName;
-
-        // Start building the form content string
-        $formContent = <<<'EOD'
-<?php
-session_start();
 include('../config/config.php'); // Adjust path as needed
 
 // Ensure PDO is set to throw exceptions for better error handling during development
@@ -75,7 +7,7 @@ if (isset($conn)) {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 
-$formId = $_GET['id'] ?? 0;
+$formId = 53;
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -342,54 +274,3 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-EOD;
-
-        // Write the content to the file
-        if (file_put_contents($formFilePath, $formContent) === false) {
-            throw new Exception("Failed to write form file: " . $formFilePath);
-        }
-
-        // Save questions and options to database
-        foreach ($questions as $index => $questionText) {
-            $questionText = trim($questionText);
-            if (empty($questionText)) continue;
-
-            $questionType = $types[$index] ?? null;
-
-            $stmt = $conn->prepare("INSERT INTO questions (form_id, question_text, question_type) VALUES (?, ?, ?)");
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed (Question): " . implode(' | ', $conn->errorInfo()));
-            }
-
-            $stmt->execute([$form_id, $questionText, $questionType]);
-            $questionId = $conn->lastInsertId();
-
-            if (in_array($questionType, ['checkbox', 'radio', 'dropdown'])) {
-                $questionNumber = $index + 1;
-                if (isset($options[$questionNumber])) {
-                    foreach ($options[$questionNumber] as $optionText) {
-                        $stmt = $conn->prepare("INSERT INTO options (question_id, option_text) VALUES (?, ?)");
-                        $stmt->execute([$questionId, $optionText]);
-                    }
-                }
-            }
-        }
-
-        $conn->commit();
-        $_SESSION['success'] = "Feedback form created successfully.";
-        header("Location: ../index.php");
-        exit;
-    } catch (Exception $e) {
-        if ($conn->inTransaction()) {
-            $conn->rollBack();
-        }
-        error_log("Error saving form: " . $e->getMessage());
-        $_SESSION['error'] = "There was an error saving the form: " . $e->getMessage();
-        header("Location: ../form_generator.php");
-        exit;
-    }
-} else {
-    $_SESSION['error'] = "Invalid request method.";
-    header("Location: ../form_generator.php");
-    exit;
-}
