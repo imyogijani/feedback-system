@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $logo_tmp_name = $_FILES['company_logo']['tmp_name'];
                 $logo_name = basename($_FILES['company_logo']['name']);
                 $upload_dir = '../../assets/images/'; // Adjust this path as needed
+
                 $target_file = $upload_dir . $logo_name;
 
                 if (move_uploaded_file($logo_tmp_name, $target_file)) {
@@ -39,10 +40,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            $sanitized_company_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $company_name);
+            $sanitized_company_name = str_replace(' ', '_', $sanitized_company_name);
+            $sanitized_company_name = strtolower($sanitized_company_name);
+            $email = $sanitized_company_name . '@gmail.com';
             // Insert new user (company) into the users table
-            $stmt = $conn->prepare("INSERT INTO users (business_name, profile_image, role_id) VALUES (?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO users (username,password,business_name, profile_image, role_id,email) VALUES (?,?,'123456',?, ?, ?)");
             // Assuming a default role_id for newly created companies, e.g., 4 for 'Company'
-            $stmt->execute([$company_name, $company_logo, 4]); 
+            $stmt->execute([$company_name, $company_name, $company_logo, 3,$email]);
             $created_for = $conn->lastInsertId(); // Get the ID of the newly created user
         } else {
             $created_for = 1; // Default to user ID 1 if no company name is provided
@@ -183,7 +188,7 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         $label = $user['business_name'] ?? '';
                         $imgPath = '';
                         if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-                            $imgPath = '../assets/images/' . $img;
+                            $imgPath = '../../admin/assets/images/' . $img;
                         } else {
                             $imgPath = $img;
                         }

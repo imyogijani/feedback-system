@@ -88,7 +88,7 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         $label = $user['business_name'] ?? '';
                         $imgPath = '';
                         if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-                            $imgPath = '../../admin/assets/images/' . $img;
+                            $imgPath = '../assets/images/' . $img;
                         } else {
                             $imgPath = $img;
                         }

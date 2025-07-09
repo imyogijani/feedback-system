@@ -23,7 +23,7 @@ $stmt->execute([':status' => $publish_status, ':id' => $form_id]);
 
 
 // Fetch form title for display
-$stmt = $conn->prepare("SELECT title FROM forms WHERE id = :id");
+$stmt = $conn->prepare("SELECT * FROM forms WHERE id = :id");
 $stmt->execute([':id' => $form_id]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$form) {
@@ -32,7 +32,26 @@ if (!$form) {
 
 // Public URL to view the form
 $baseUrl = "http://" . $_SERVER['HTTP_HOST'];
-$formLink = $baseUrl . "/feedback-system/admin/crud/view_form.php?id=" . $form_id;
+
+// Fetch created_for and business_name
+$created_for = $form['created_for'] ?? null;
+$business_name = '';
+
+if ($created_for !== null) {
+    $stmtUser = $conn->prepare("SELECT business_name FROM users WHERE id = :id");
+    $stmtUser->execute([':id' => $created_for]);
+    $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+    if ($user) {
+        $business_name = $user['business_name'];
+    }
+}
+
+// Sanitize business name consistently with save_form.php
+$sanitized_business_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $business_name);
+$sanitized_business_name = str_replace(' ', '_', $sanitized_business_name);
+
+$formFileName = "feedback-form-{$form_id}.php";
+$formLink = $baseUrl . "/feedback-system/forms/" . ($sanitized_business_name ? $sanitized_business_name . '/' : '') . $formFileName;
 
 // Use Google Chart API for QR code
 $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($formLink);
@@ -63,8 +82,7 @@ $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . 
                     <div class="container-xxl flex-grow-1 container-p-y">
                         <!-- Your page content goes here -->
                         <h2 class="card-title text-success mb-3">✅ Form Published Successfully</h2>
-                        <p><strong>Form:</strong> <?= htmlspecialchars($form['title']) ?></p>
-
+                        <p><strong>Form:</strong> <?= htmlspecialchars($form['title'])  ?></p>
                         <div class="mb-3">
                             <label><strong>Public Form Link:</strong></label>
                             <div class="input-group">
