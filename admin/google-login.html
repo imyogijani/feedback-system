@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Login</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  </head>
+  <body>
+    <h2>Login with Google</h2>
+    <button onclick="signInWithGoogle()">Login</button>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+      import {
+        getAuth,
+        GoogleAuthProvider,
+        signInWithPopup,
+      } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDMTtRugW9lFa3ITfippO0DP7iSmGuiVRY",
+        authDomain: "sign-in-549ee.firebaseapp.com",
+        projectId: "sign-in-549ee",
+        storageBucket: "sign-in-549ee.firebasestorage.app",
+        messagingSenderId: "723595676696",
+        appId: "1:723595676696:web:a0925f60f0cfc710cf876d",
+        measurementId: "G-PCQDPTBF5Y",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+
+      window.signInWithGoogle = function () {
+        signInWithPopup(auth, provider)
+          .then((result) => result.user.getIdToken())
+          .then((idToken) => {
+            return fetch("google-login.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ idToken }),
+            });
+          })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              console.log("Login successful");
+              console.log(data);
+              window.location.href = "index.php";
+            } else {
+              alert("Login failed: " + data.message);
+            }
+          })
+          .catch((err) => console.error(err));
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+{
+    "require": {
+        "kreait/firebase-php": "^5.26",
+        "phpmailer/phpmailer": "^6.10",
+        "stripe/stripe-php": "^17.4"
+    }
+}

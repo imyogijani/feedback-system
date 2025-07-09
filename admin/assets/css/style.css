@@ -1,0 +1,93 @@
+.form-item {
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.form-item label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-item .btn-remove {
+  margin-top: 10px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+.rating {
+  display: inline-block;
+}
+
+.rating input {
+  display: none;
+}
+
+.rating label {
+  float: right;
+  padding: 10px;
+  font-size: 36px;
+  color: #444;
+  transition: all 0.2s ease;
+}
+
+.rating input:checked ~ label {
+  color: #ffc107;
+}
+
+.rating:not(:checked) > label:hover,
+.rating:not(:checked) > label:hover ~ label {
+  color: #ffc107;
+}
+
+.rating > input:checked + label:hover,
+.rating > input:checked + label:hover ~ label,
+.rating > input:checked ~ label:hover,
+.rating > input:checked ~ label:hover ~ label,
+.rating > label:hover ~ input:checked ~ label {
+  color: #ffc107;
+}
+
+.rating .star:before {
+  content: "\f005"; /* FontAwesome star icon */
+  font-family: FontAwesome;
+  display: inline-block;
+}
+
+/* Heart styling */
+.rating .heart:before {
+  content: "\f004"; /* FontAwesome heart icon */
+  font-family: FontAwesome;
+  display: inline-block;
+}
+
+/* Thumb styling */
+.rating .thumb:before {
+  content: "\f164"; /* FontAwesome thumbs-up icon */
+  font-family: FontAwesome;
+  display: inline-block;
+}
+a {
+  color: #007bff;
+  text-decoration: none !important;
+}
+.view-form {
+  border: rgba(105, 108, 255, 0.16) 5px solid;
+  /* border-style: dashed; */
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+.view-form .title {
+  color: #696cff;
+}

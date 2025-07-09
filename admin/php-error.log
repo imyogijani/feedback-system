@@ -1,0 +1,107 @@
+[18-Jun-2025 09:15:14 Europe/Berlin] Google Login PHP: Raw input received: '{"idToken":"eyJhbGciOiJSUzI1NiIsImtpZCI6ImE0YTEwZGVjZTk4MzY2ZDZmNjNlMTY3Mjg2YWU5YjYxMWQyYmFhMjciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiRm9yYW0gUGFyaWtoIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lEeGdIUWZsNk9yZWlYRkp5WmNmeFRlajhpVFBiQnFkbVlNMjN0UTVhT25EQzRfUT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9zaWduLWluLTU0OWVlIiwiYXVkIjoic2lnbi1pbi01NDllZSIsImF1dGhfdGltZSI6MTc1MDIzMDkxNCwidXNlcl9pZCI6IjBXNXZFOTR2STNNRHRuYXB1cHhjVGR2SzRnMTMiLCJzdWIiOiIwVzV2RTk0dkkzTUR0bmFwdXB4Y1Rkdks0ZzEzIiwiaWF0IjoxNzUwMjMwOTE0LCJleHAiOjE3NTAyMzQ1MTQsImVtYWlsIjoiZm9yYW1wYXJpa2gxMjM0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTEyMzEzNzAxNTIyNzkxNzIzNzE0Il0sImVtYWlsIjpbImZvcmFtcGFyaWtoMTIzNEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.iAqT7rBVB4nV8Qa0GcALXHkoSzJKI7TSYkmnIN50XYHX--lIepwfRF3EW1hT7Jf9EPNglIRwgfj57Ic_grCEjOM6pjJ8NquSul-z7P0anEEBhsAUXxmBxyqQ9yIU1QqqqpOND_k6KtJuQ7I_cYcnuCNksW4nlN8GywRAw_gXP7zxO26kZ4R-8eqO4fb-uJgr1mejER4i7GIzglHvSsjKq4oNKGYUhtE9ptJhm7bFG6OsELVzoR91lfCNN_ty5voVjk3RRt_agrfyzNiWMozG4pWzicZXbdiTz_JmZ7FCqmC71JPUXdA2Au4j4UjDANSYmKqMj-nqnYp0pbEJW7NhMg"}'
+[18-Jun-2025 09:15:14 Europe/Berlin] Google Login PHP: Decoded data array: array (
+  'idToken' => 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImE0YTEwZGVjZTk4MzY2ZDZmNjNlMTY3Mjg2YWU5YjYxMWQyYmFhMjciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiRm9yYW0gUGFyaWtoIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lEeGdIUWZsNk9yZWlYRkp5WmNmeFRlajhpVFBiQnFkbVlNMjN0UTVhT25EQzRfUT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9zaWduLWluLTU0OWVlIiwiYXVkIjoic2lnbi1pbi01NDllZSIsImF1dGhfdGltZSI6MTc1MDIzMDkxNCwidXNlcl9pZCI6IjBXNXZFOTR2STNNRHRuYXB1cHhjVGR2SzRnMTMiLCJzdWIiOiIwVzV2RTk0dkkzTUR0bmFwdXB4Y1Rkdks0ZzEzIiwiaWF0IjoxNzUwMjMwOTE0LCJleHAiOjE3NTAyMzQ1MTQsImVtYWlsIjoiZm9yYW1wYXJpa2gxMjM0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTEyMzEzNzAxNTIyNzkxNzIzNzE0Il0sImVtYWlsIjpbImZvcmFtcGFyaWtoMTIzNEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.iAqT7rBVB4nV8Qa0GcALXHkoSzJKI7TSYkmnIN50XYHX--lIepwfRF3EW1hT7Jf9EPNglIRwgfj57Ic_grCEjOM6pjJ8NquSul-z7P0anEEBhsAUXxmBxyqQ9yIU1QqqqpOND_k6KtJuQ7I_cYcnuCNksW4nlN8GywRAw_gXP7zxO26kZ4R-8eqO4fb-uJgr1mejER4i7GIzglHvSsjKq4oNKGYUhtE9ptJhm7bFG6OsELVzoR91lfCNN_ty5voVjk3RRt_agrfyzNiWMozG4pWzicZXbdiTz_JmZ7FCqmC71JPUXdA2Au4j4UjDANSYmKqMj-nqnYp0pbEJW7NhMg',
+)
+[18-Jun-2025 09:15:14 Europe/Berlin] Google Login PHP: Extracted idToken: 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImE0YTEwZGVjZTk4MzY2ZDZmNjNlMTY3Mjg2YWU5YjYxMWQyYmFhMjciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiRm9yYW0gUGFyaWtoIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lEeGdIUWZsNk9yZWlYRkp5WmNmeFRlajhpVFBiQnFkbVlNMjN0UTVhT25EQzRfUT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9zaWduLWluLTU0OWVlIiwiYXVkIjoic2lnbi1pbi01NDllZSIsImF1dGhfdGltZSI6MTc1MDIzMDkxNCwidXNlcl9pZCI6IjBXNXZFOTR2STNNRHRuYXB1cHhjVGR2SzRnMTMiLCJzdWIiOiIwVzV2RTk0dkkzTUR0bmFwdXB4Y1Rkdks0ZzEzIiwiaWF0IjoxNzUwMjMwOTE0LCJleHAiOjE3NTAyMzQ1MTQsImVtYWlsIjoiZm9yYW1wYXJpa2gxMjM0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTEyMzEzNzAxNTIyNzkxNzIzNzE0Il0sImVtYWlsIjpbImZvcmFtcGFyaWtoMTIzNEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.iAqT7rBVB4nV8Qa0GcALXHkoSzJKI7TSYkmnIN50XYHX--lIepwfRF3EW1hT7Jf9EPNglIRwgfj57Ic_grCEjOM6pjJ8NquSul-z7P0anEEBhsAUXxmBxyqQ9yIU1QqqqpOND_k6KtJuQ7I_cYcnuCNksW4nlN8GywRAw_gXP7zxO26kZ4R-8eqO4fb-uJgr1mejER4i7GIzglHvSsjKq4oNKGYUhtE9ptJhm7bFG6OsELVzoR91lfCNN_ty5voVjk3RRt_agrfyzNiWMozG4pWzicZXbdiTz_JmZ7FCqmC71JPUXdA2Au4j4UjDANSYmKqMj-nqnYp0pbEJW7NhMg'
+[18-Jun-2025 09:15:14 Europe/Berlin] Google Login PHP: Authentication process failed: Cannot use object of type Lcobucci\JWT\Token\Plain as array
+[18-Jun-2025 09:15:50 Europe/Berlin] Google Login PHP: Raw input received: '{"idToken":"eyJhbGciOiJSUzI1NiIsImtpZCI6ImE0YTEwZGVjZTk4MzY2ZDZmNjNlMTY3Mjg2YWU5YjYxMWQyYmFhMjciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiRm9yYW0gUGFyaWtoIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lEeGdIUWZsNk9yZWlYRkp5WmNmeFRlajhpVFBiQnFkbVlNMjN0UTVhT25EQzRfUT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9zaWduLWluLTU0OWVlIiwiYXVkIjoic2lnbi1pbi01NDllZSIsImF1dGhfdGltZSI6MTc1MDIzMDk1MCwidXNlcl9pZCI6IjBXNXZFOTR2STNNRHRuYXB1cHhjVGR2SzRnMTMiLCJzdWIiOiIwVzV2RTk0dkkzTUR0bmFwdXB4Y1Rkdks0ZzEzIiwiaWF0IjoxNzUwMjMwOTUwLCJleHAiOjE3NTAyMzQ1NTAsImVtYWlsIjoiZm9yYW1wYXJpa2gxMjM0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTEyMzEzNzAxNTIyNzkxNzIzNzE0Il0sImVtYWlsIjpbImZvcmFtcGFyaWtoMTIzNEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.D-fm3d62-OM8Yln1N8eAJELMbMBL7sCA7zBQqg0FD1vfa0py2vdmNw22L5CyMfzBmCEfvaMk9TMWEyN2yWrWXPP6oMc8HSV1aIznglobzyBfO9O_27hUk5EkvIfplQ4HFqi8TIil1eKVFaxOx4Bs_IfnDB58fL-oljQUcRkQZyjrd8-1cvp6bcorCoZh9q8Bnwv6lQn5eYjnXQyJ5TMrxnNFTGG2rV4BFnGu-a8OP9Ievb8QlLURoBO1m2Xz5dbYQXUm411dbEw3S1b_0shT_CEvx1Bm4WeZFon6DWsHJDvTVecinxUDKiYzxoOGbb70mxqgfwC7AmT4JITrNObKJA"}'
+[18-Jun-2025 09:15:50 Europe/Berlin] Google Login PHP: Decoded data array: array (
+  'idToken' => 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImE0YTEwZGVjZTk4MzY2ZDZmNjNlMTY3Mjg2YWU5YjYxMWQyYmFhMjciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiRm9yYW0gUGFyaWtoIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lEeGdIUWZsNk9yZWlYRkp5WmNmeFRlajhpVFBiQnFkbVlNMjN0UTVhT25EQzRfUT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9zaWduLWluLTU0OWVlIiwiYXVkIjoic2lnbi1pbi01NDllZSIsImF1dGhfdGltZSI6MTc1MDIzMDk1MCwidXNlcl9pZCI6IjBXNXZFOTR2STNNRHRuYXB1cHhjVGR2SzRnMTMiLCJzdWIiOiIwVzV2RTk0dkkzTUR0bmFwdXB4Y1Rkdks0ZzEzIiwiaWF0IjoxNzUwMjMwOTUwLCJleHAiOjE3NTAyMzQ1NTAsImVtYWlsIjoiZm9yYW1wYXJpa2gxMjM0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTEyMzEzNzAxNTIyNzkxNzIzNzE0Il0sImVtYWlsIjpbImZvcmFtcGFyaWtoMTIzNEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.D-fm3d62-OM8Yln1N8eAJELMbMBL7sCA7zBQqg0FD1vfa0py2vdmNw22L5CyMfzBmCEfvaMk9TMWEyN2yWrWXPP6oMc8HSV1aIznglobzyBfO9O_27hUk5EkvIfplQ4HFqi8TIil1eKVFaxOx4Bs_IfnDB58fL-oljQUcRkQZyjrd8-1cvp6bcorCoZh9q8Bnwv6lQn5eYjnXQyJ5TMrxnNFTGG2rV4BFnGu-a8OP9Ievb8QlLURoBO1m2Xz5dbYQXUm411dbEw3S1b_0shT_CEvx1Bm4WeZFon6DWsHJDvTVecinxUDKiYzxoOGbb70mxqgfwC7AmT4JITrNObKJA',
+)
+[18-Jun-2025 09:15:50 Europe/Berlin] Google Login PHP: Extracted idToken: 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImE0YTEwZGVjZTk4MzY2ZDZmNjNlMTY3Mjg2YWU5YjYxMWQyYmFhMjciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiRm9yYW0gUGFyaWtoIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lEeGdIUWZsNk9yZWlYRkp5WmNmeFRlajhpVFBiQnFkbVlNMjN0UTVhT25EQzRfUT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9zaWduLWluLTU0OWVlIiwiYXVkIjoic2lnbi1pbi01NDllZSIsImF1dGhfdGltZSI6MTc1MDIzMDk1MCwidXNlcl9pZCI6IjBXNXZFOTR2STNNRHRuYXB1cHhjVGR2SzRnMTMiLCJzdWIiOiIwVzV2RTk0dkkzTUR0bmFwdXB4Y1Rkdks0ZzEzIiwiaWF0IjoxNzUwMjMwOTUwLCJleHAiOjE3NTAyMzQ1NTAsImVtYWlsIjoiZm9yYW1wYXJpa2gxMjM0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTEyMzEzNzAxNTIyNzkxNzIzNzE0Il0sImVtYWlsIjpbImZvcmFtcGFyaWtoMTIzNEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.D-fm3d62-OM8Yln1N8eAJELMbMBL7sCA7zBQqg0FD1vfa0py2vdmNw22L5CyMfzBmCEfvaMk9TMWEyN2yWrWXPP6oMc8HSV1aIznglobzyBfO9O_27hUk5EkvIfplQ4HFqi8TIil1eKVFaxOx4Bs_IfnDB58fL-oljQUcRkQZyjrd8-1cvp6bcorCoZh9q8Bnwv6lQn5eYjnXQyJ5TMrxnNFTGG2rV4BFnGu-a8OP9Ievb8QlLURoBO1m2Xz5dbYQXUm411dbEw3S1b_0shT_CEvx1Bm4WeZFon6DWsHJDvTVecinxUDKiYzxoOGbb70mxqgfwC7AmT4JITrNObKJA'
+Token methods: Array
+(
+    [0] => __construct
+    [1] => headers
+    [2] => claims
+    [3] => signature
+    [4] => payload
+    [5] => isPermittedFor
+    [6] => isIdentifiedBy
+    [7] => isRelatedTo
+    [8] => hasBeenIssuedBy
+    [9] => hasBeenIssuedBefore
+    [10] => isMinimumTimeBefore
+    [11] => isExpired
+    [12] => toString
+)
+
+Token object: Lcobucci\JWT\Token\Plain Object
+(
+    [headers:Lcobucci\JWT\Token\Plain:private] => Lcobucci\JWT\Token\DataSet Object
+        (
+            [data:Lcobucci\JWT\Token\DataSet:private] => Array
+                (
+                    [alg] => RS256
+                    [kid] => a4a10dece98366d6f63e167286ae9b611d2baa27
+                    [typ] => JWT
+                )
+
+            [encoded:Lcobucci\JWT\Token\DataSet:private] => eyJhbGciOiJSUzI1NiIsImtpZCI6ImE0YTEwZGVjZTk4MzY2ZDZmNjNlMTY3Mjg2YWU5YjYxMWQyYmFhMjciLCJ0eXAiOiJKV1QifQ
+        )
+
+    [claims:Lcobucci\JWT\Token\Plain:private] => Lcobucci\JWT\Token\DataSet Object
+        (
+            [data:Lcobucci\JWT\Token\DataSet:private] => Array
+                (
+                    [name] => Foram Parikh
+                    [picture] => https://lh3.googleusercontent.com/a/ACg8ocIDxgHQfl6OreiXFJyZcfxTej8iTPbBqdmYM23tQ5aOnDC4_Q=s96-c
+                    [iss] => https://securetoken.google.com/sign-in-549ee
+                    [aud] => Array
+                        (
+                            [0] => sign-in-549ee
+                        )
+
+                    [auth_time] => 1750230950
+                    [user_id] => 0W5vE94vI3MDtnapupxcTdvK4g13
+                    [sub] => 0W5vE94vI3MDtnapupxcTdvK4g13
+                    [iat] => DateTimeImmutable Object
+                        (
+                            [date] => 2025-06-18 07:15:50.000000
+                            [timezone_type] => 1
+                            [timezone] => +00:00
+                        )
+
+                    [exp] => DateTimeImmutable Object
+                        (
+                            [date] => 2025-06-18 08:15:50.000000
+                            [timezone_type] => 1
+                            [timezone] => +00:00
+                        )
+
+                    [email] => foramparikh1234@gmail.com
+                    [email_verified] => 1
+                    [firebase] => Array
+                        (
+                            [identities] => Array
+                                (
+                                    [google.com] => Array
+                                        (
+                                            [0] => 112313701522791723714
+                                        )
+
+                                    [email] => Array
+                                        (
+                                            [0] => foramparikh1234@gmail.com
+                                        )
+
+                                )
+
+                            [sign_in_provider] => google.com
+                        )
+
+                )
+
+            [encoded:Lcobucci\JWT\Token\DataSet:private] => eyJuYW1lIjoiRm9yYW0gUGFyaWtoIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lEeGdIUWZsNk9yZWlYRkp5WmNmeFRlajhpVFBiQnFkbVlNMjN0UTVhT25EQzRfUT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9zaWduLWluLTU0OWVlIiwiYXVkIjoic2lnbi1pbi01NDllZSIsImF1dGhfdGltZSI6MTc1MDIzMDk1MCwidXNlcl9pZCI6IjBXNXZFOTR2STNNRHRuYXB1cHhjVGR2SzRnMTMiLCJzdWIiOiIwVzV2RTk0dkkzTUR0bmFwdXB4Y1Rkdks0ZzEzIiwiaWF0IjoxNzUwMjMwOTUwLCJleHAiOjE3NTAyMzQ1NTAsImVtYWlsIjoiZm9yYW1wYXJpa2gxMjM0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTEyMzEzNzAxNTIyNzkxNzIzNzE0Il0sImVtYWlsIjpbImZvcmFtcGFyaWtoMTIzNEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19
+        )
+
+    [signature:Lcobucci\JWT\Token\Plain:private] => Lcobucci\JWT\Token\Signature Object
+        (
+            [hash:Lcobucci\JWT\Token\Signature:private] => çæÝÞ¶øã<bYõ7Ç€$BÌlÀKîÀ€ï0Pª[ßkJrÚ÷f7¶/²1üÁ˜!½£$õ3#vÉjÖ\óú Ç<%uhŒç‚ZÏ _;Ó¿Û¸T“‘$¼‡é•¨¼Lˆ¥Õâ•¬NÇ€lü‡ç||¿¨–4qg(ëwÏµrúzmÊ+
+†aö¯Ÿú•	ùyˆç]‰å3+ÆsELa¶­^q®ù¯?Ò½¿”µ µ›eóåÖØAu&ã]]lL7KVÿÒÈSü!/ÇPfág™‰úk$;ÓUç"Ÿ*&3Æƒ†m¾ô›  »dø$„ë4æÊ$
+            [encoded:Lcobucci\JWT\Token\Signature:private] => D-fm3d62-OM8Yln1N8eAJELMbMBL7sCA7zBQqg0FD1vfa0py2vdmNw22L5CyMfzBmCEfvaMk9TMWEyN2yWrWXPP6oMc8HSV1aIznglobzyBfO9O_27hUk5EkvIfplQ4HFqi8TIil1eKVFaxOx4Bs_IfnDB58fL-oljQUcRkQZyjrd8-1cvp6bcorCoZh9q8Bnwv6lQn5eYjnXQyJ5TMrxnNFTGG2rV4BFnGu-a8OP9Ievb8QlLURoBO1m2Xz5dbYQXUm411dbEw3S1b_0shT_CEvx1Bm4WeZFon6DWsHJDvTVecinxUDKiYzxoOGbb70mxqgfwC7AmT4JITrNObKJA
+        )
+
+)
+
+[18-Jun-2025 09:15:50 Europe/Berlin] Google Login PHP: Authentication process failed: Cannot use object of type Lcobucci\JWT\Token\Plain as array
