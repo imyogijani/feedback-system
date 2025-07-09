@@ -80,18 +80,35 @@ include('assets/inc/incHeader.php');
                                         var img = selected.getAttribute('data-img');
                                         var previewDiv = document.getElementById('profileImagePreview');
                                         var imgTag = document.getElementById('profileImgTag');
+                                        var companyNameInput = document.getElementById('companyNameInput');
+                                        var companyLogoInput = document.getElementById('companyLogoInput');
+
                                         if (img && img.trim() !== '' && img !== 'null') {
                                             imgTag.src = img;
                                             previewDiv.style.display = '';
+                                            companyNameInput.disabled = true;
+                                            companyLogoInput.disabled = true;
                                         } else {
                                             imgTag.src = '';
                                             previewDiv.style.display = 'none';
+                                            companyNameInput.disabled = false;
+                                            companyLogoInput.disabled = false;
                                         }
                                     }
                                     // Show image if already selected on page load (edit mode)
                                     document.addEventListener('DOMContentLoaded', showProfileImage);
                                     </script>
                                     </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Company Name</label>
+                                    <input type="text" class="form-control" name="company_name" id="companyNameInput">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Company Logo</label>
+                                    <input type="file" class="form-control" name="company_logo" id="companyLogoInput">
+                                </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -229,7 +246,7 @@ include('assets/inc/incHeader.php');
                         <input type="text" name="questions[]" class="form-control mt-2" placeholder="Question text" required>
                     </div>
                     <div class="col-md-6">
-                        <select id="questionType${questionCounter}" name="types[]" class="form-select mt-2" onchange="updateQuestionFields(${questionCounter})">
+                        <select id="questionType${questionNumber}" name="types[]" class="form-select mt-2" onchange="updateQuestionFields(${questionNumber})">
                             <option>Select Option</option>
                             <option value="text">Short Answer</option>
                             <option value="textarea">Paragraph</option>
@@ -243,7 +260,7 @@ include('assets/inc/incHeader.php');
                         </select>
                     </div>
                 </div>
-                <div id="questionFields${questionCounter}">
+                <div id="questionFields${questionNumber}">
                     <!-- Question-specific fields will be added here -->
                 </div>
             `;
