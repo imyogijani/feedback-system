@@ -1,3 +1,15 @@
+<style>
+.menu-link, .app-brand-link {
+    text-decoration: none !important;
+    transition: all 0.3s ease;
+}
+
+.menu-link:hover {
+    background-color: rgba(67, 89, 113, 0.04);
+    color: #696cff;
+}
+</style>
+
 <aside
     id="layout-menu"
     class="layout-menu menu-vertical menu bg-menu-theme">

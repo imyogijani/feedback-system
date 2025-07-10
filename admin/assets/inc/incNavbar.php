@@ -38,8 +38,12 @@ $roleDisplay = ucfirst(htmlspecialchars($role ?? 'User'));
     </div>
 
     <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
+        <!-- Welcome Message -->
+        <div class="navbar-nav align-items-center">
+            <span class="nav-item text-muted" style="font-size: 1.2rem; font-weight: 600;">Welcome, <?= $username ?>!</span>
+        </div>
+        
         <ul class="navbar-nav flex-row align-items-center ms-auto">
-
             <!-- User -->
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
@@ -84,7 +88,6 @@ $roleDisplay = ucfirst(htmlspecialchars($role ?? 'User'));
                 </ul>
             </li>
             <!--/ User -->
-
         </ul>
     </div>
 </nav>

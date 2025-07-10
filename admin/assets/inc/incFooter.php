@@ -10,7 +10,8 @@
             <a
                 href="https://aksharrajinfotech.com"
                 target="_blank"
-                class="footer-link fw-bolder">AksharRaj Infotech</a>
+                class="footer-link fw-bolder"
+                style="text-decoration: none;">AksharRaj Infotech</a>
         </div>
     </div>
 </footer>
