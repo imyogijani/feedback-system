@@ -312,11 +312,11 @@
                         <div class="mt-3">
                             <label class="form-label">Rating (Stars)</label>
                             <div class="rating">
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
                                 <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
+                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
+                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
+                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
+                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
                                 <input type="hidden" name="rating[${questionNumber}]" id="rating${questionNumber}" value="0">
                             </div>
                         </div>
@@ -326,11 +326,11 @@
                         <div class="mt-3">
                             <label class="form-label">Rating (Hearts)</label>
                             <div class="rating">
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
                                 <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
+                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
+                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
+                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
+                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
                                 <input type="hidden" name="rating[${questionNumber}]" id="rating${questionNumber}" value="0">
                             </div>
                         </div>
@@ -340,11 +340,11 @@
                         <div class="mt-3">
                             <label class="form-label">Rating (Thumbs)</label>
                             <div class="rating">
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
                                 <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
+                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
+                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
+                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
+                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
                                 <input type="hidden" name="rating[${questionNumber}]" id="rating${questionNumber}" value="0">
                             </div>
                         </div>
@@ -356,12 +356,14 @@
                 document.getElementById(`rating${questionNumber}`).value = value;
                 const ratingDiv = document.getElementById(`questionFields${questionNumber}`).querySelector('.rating');
                 const icons = ratingDiv.getElementsByTagName('i');
-                
+                // Reset all icons
+                for (let i = 0; i < icons.length; i++) {
+                    icons[i].style.color = '#ccc';
+                }
+                // Highlight the correct icons from left to right
                 for (let i = 0; i < icons.length; i++) {
                     if (i < value) {
-                        icons[i].style.color = '#ffc107'; // Highlight selected icons
-                    } else {
-                        icons[i].style.color = '#ccc'; // Reset unselected icons
+                        icons[i].style.color = '#ffc107';
                     }
                 }
             }
