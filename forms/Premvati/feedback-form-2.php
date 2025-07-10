@@ -7,7 +7,7 @@ if (isset($conn)) {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 
-$formId = $_SESSION['form_id'];
+$formId = $form_id; // Directly use the form_id
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -108,7 +108,7 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <h2 class="text-center title"><?= htmlspecialchars($form['title']) ?></h2>
         <p><?= htmlspecialchars($form['description']) ?></p>
-        <form method="POST" action="process_response.php">
+        <form method="POST" action="../../admin/crud/process_response.php">
             <input type="hidden" name="form_id" value="<?= htmlspecialchars($formId) ?>">
 
             <?php if (!empty($form['firstname']) || !empty($form['lastname'])): ?>
