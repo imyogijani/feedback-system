@@ -22,7 +22,7 @@ $offset = ($page - 1) * $limit;
 
 try {
     // Count total forms
-    $stmt = $conn->query("SELECT COUNT(*) AS total FROM forms");
+    $stmt = $conn->query("SELECT COUNT(*) AS total FROM forms_combined");
     $totalForms = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     $totalPages = max(1, ceil($totalForms / $limit));
 
@@ -33,7 +33,7 @@ try {
     // Get paginated forms with creator info
     $stmt = $conn->prepare("
         SELECT f.id, f.title, f.created_at, u.username AS created_by, u.firebase_uid 
-        FROM forms f 
+        FROM forms_combined f 
         LEFT JOIN users u ON f.created_by = u.id 
         ORDER BY f.created_at DESC 
         LIMIT :limit OFFSET :offset

@@ -18,12 +18,12 @@ if ($form_id <= 0 || ($publish_status !== 0 && $publish_status !== 1)) {
 }
 
 // Update publish status
-$stmt = $conn->prepare("UPDATE forms SET published = :status WHERE id = :id");
+$stmt = $conn->prepare("UPDATE forms_combined SET published = :status WHERE id = :id");
 $stmt->execute([':status' => $publish_status, ':id' => $form_id]);
 
 
 // Fetch form title for display
-$stmt = $conn->prepare("SELECT * FROM forms WHERE id = :id");
+$stmt = $conn->prepare("SELECT * FROM forms_combined WHERE id = :id");
 $stmt->execute([':id' => $form_id]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$form) {
@@ -51,7 +51,7 @@ $sanitized_business_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $business_name)
 $sanitized_business_name = str_replace(' ', '_', $sanitized_business_name);
 
 $formFileName = "feedback-form-{$form_id}.php";
-$formLink = $baseUrl . "/feedback-system/forms/" . ($sanitized_business_name ? $sanitized_business_name . '/' : '') . $formFileName;
+$formLink = $baseUrl . "/feedback-system/forms_combined/" . ($sanitized_business_name ? $sanitized_business_name . '/' : '') . $formFileName;
 
 // Use Google Chart API for QR code
 $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($formLink);
