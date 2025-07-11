@@ -1,4 +1,4 @@
-    <?php
+<?php
     session_start();
     header("Cache-Control: no-cache, no-store, must-revalidate");
     header("Pragma: no-cache"); 
@@ -148,39 +148,79 @@
                                 </div>
 
                                 <div id="questions">
-                                    <!-- Default Question -->
-                                    <div class="mb-3 question-block">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <label>Question 1</label>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <button type="button" class="btn btn-secondary  btn-sm" style="float: right;" onclick="removeQuestion(this)">X</button>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <input type="text" name="questions[]" class="form-control mt-2" placeholder="Question text" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <select id="questionType1" name="types[]" class="form-select mt-2" onchange="updateQuestionFields(1)">
-                                                    <option>Select Option</option>
-                                                    <option value="text">Short Answer</option>
-                                                    <option value="textarea">Paragraph</option>
-                                                    <option value="radio">Radio Button</option>
-                                                    <option value="checkbox">Checkbox</option>
-                                                    <option value="dropdown">Dropdown</option>
-                                                    <option value="date">Date Picker</option>
-                                                    <option value="rating_star">Rating (Stars)</option>
-                                                    <option value="rating_heart">Rating (Hearts)</option>
-                                                    <option value="rating_thumb">Rating (Thumbs)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div id="questionFields1">
-                                            <!-- Question-specific fields will be added here -->
-                                        </div>
-                                    </div>
+            <!-- Default Question Section -->
+            <section class="question-section mb-3" draggable="true" ondragstart="dragSection(event)" ondragover="allowSectionDrop(event)" ondrop="dropSection(event)">
+                <div class="section-header custom-section-header d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center">
+                        <span class="section-badge me-2">1</span>
+                        <span class="fw-bold section-title">Section 1</span>
+                    </div>
+                    <span class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>
+                </div>
+                <div class="question-block">
+                    <div class="row align-items-center mb-2">
+                        <div class="col-10 col-md-10">
+                            <label class="question-label">Question 1</label>
+                        </div>
+                        <div class="col-2 col-md-2 text-end">
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-btn" onclick="removeQuestion(this)" title="Remove section"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="text" name="questions[]" class="form-control mt-2" placeholder="Question text" required>
+                        </div>
+                        <div class="col-md-6">
+                            <select id="questionType1" name="types[]" class="form-select mt-2" onchange="updateQuestionFields(1)">
+                                <option>Select Option</option>
+                                <option value="text">Short Answer</option>
+                                <option value="textarea">Paragraph</option>
+                                <option value="radio">Radio Button</option>
+                                <option value="checkbox">Checkbox</option>
+                                <option value="dropdown">Dropdown</option>
+                                <option value="date">Date Picker</option>
+                                <option value="rating_star">Rating (Stars)</option>
+                                <option value="rating_heart">Rating (Hearts)</option>
+                                <option value="rating_thumb">Rating (Thumbs)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="questionFields1">
+                        <!-- Question-specific fields will be added here -->
+                    </div>
+                </div>
+            </section>
+            <script>
+            // Section drag and drop logic (fixed)
+            let draggedSection = null;
+            let dragOverSection = null;
+            function dragSection(ev) {
+                draggedSection = ev.currentTarget;
+                ev.dataTransfer.effectAllowed = 'move';
+                ev.dataTransfer.setData('text/plain', '');
+            }
+            function allowSectionDrop(ev) {
+                ev.preventDefault();
+                dragOverSection = ev.currentTarget;
+                dragOverSection.classList.add('drag-over');
+            }
+            function dropSection(ev) {
+                ev.preventDefault();
+                if (draggedSection && dragOverSection && draggedSection !== dragOverSection) {
+                    const parent = dragOverSection.parentNode;
+                    parent.insertBefore(draggedSection, dragOverSection);
+                }
+                if (dragOverSection) dragOverSection.classList.remove('drag-over');
+                draggedSection = null;
+                dragOverSection = null;
+            }
+            // Remove drag-over class on dragleave
+            document.addEventListener('dragleave', function(ev) {
+                if (ev.target.classList && ev.target.classList.contains('question-section')) {
+                    ev.target.classList.remove('drag-over');
+                }
+            });
+            </script>
                                 </div>
 
                                 <button type="button" class="btn btn-secondary" onclick="addQuestion()">+ Add Question</button>
@@ -227,45 +267,59 @@
 
             function addQuestion() {
                 questionCounter++;
-                const questionBlock = document.createElement('div');
-                questionBlock.classList.add('mb-3', 'question-block');
-                questionBlock.innerHTML = `
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label>Question ${questionCounter}</label>
+                const section = document.createElement('section');
+                section.classList.add('question-section', 'mb-3');
+                section.setAttribute('draggable', 'true');
+                section.style.cursor = 'move';
+                section.ondragstart = dragSection;
+                section.ondragover = allowSectionDrop;
+                section.ondrop = dropSection;
+                section.innerHTML = `
+                    <div class="section-header custom-section-header d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <span class="section-badge me-2">${questionCounter}</span>
+                            <span class="fw-bold section-title">Section ${questionCounter}</span>
                         </div>
-                        <div class="col-md-6">
-                            <button type="button" class="btn btn-secondary btn-sm" style="float: right;" onclick="removeQuestion(this)">X</button>
-                        </div>
+                        <span class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <input type="text" name="questions[]" class="form-control mt-2" placeholder="Question text" required>
+                    <div class="question-block">
+                        <div class="row align-items-center mb-2">
+                            <div class="col-10 col-md-10">
+                                <label class="question-label">Question ${questionCounter}</label>
+                            </div>
+                            <div class="col-2 col-md-2 text-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-btn" onclick="removeQuestion(this)" title="Remove section"><i class="fas fa-times"></i></button>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <select id="questionType${questionCounter}" name="types[]" class="form-select mt-2" onchange="updateQuestionFields(${questionCounter})">
-                                <option>Select Option</option>
-                                <option value="text">Short Answer</option>
-                                <option value="textarea">Paragraph</option>
-                                <option value="radio">Radio Button</option>
-                                <option value="checkbox">Checkbox</option>
-                                <option value="dropdown">Dropdown</option>
-                                <option value="date">Date Picker</option>
-                                <option value="rating_star">Rating (Stars)</option>
-                                <option value="rating_heart">Rating (Hearts)</option>
-                                <option value="rating_thumb">Rating (Thumbs)</option>
-                            </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" name="questions[]" class="form-control mt-2" placeholder="Question text" required>
+                            </div>
+                            <div class="col-md-6">
+                                <select id="questionType${questionCounter}" name="types[]" class="form-select mt-2" onchange="updateQuestionFields(${questionCounter})">
+                                    <option>Select Option</option>
+                                    <option value="text">Short Answer</option>
+                                    <option value="textarea">Paragraph</option>
+                                    <option value="radio">Radio Button</option>
+                                    <option value="checkbox">Checkbox</option>
+                                    <option value="dropdown">Dropdown</option>
+                                    <option value="date">Date Picker</option>
+                                    <option value="rating_star">Rating (Stars)</option>
+                                    <option value="rating_heart">Rating (Hearts)</option>
+                                    <option value="rating_thumb">Rating (Thumbs)</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div id="questionFields${questionCounter}">
-                        <!-- Question-specific fields will be added here -->
+                        <div id="questionFields${questionCounter}">
+                            <!-- Question-specific fields will be added here -->
+                        </div>
                     </div>
                 `;
-                document.getElementById('questions').appendChild(questionBlock);
+                document.getElementById('questions').appendChild(section);
             }
 
             function removeQuestion(element) {
-                element.closest('.question-block').remove();
+                element.closest('.question-section').remove();
             }
 
             function updateQuestionFields(questionNumber) {
@@ -401,6 +455,86 @@
             .rating i:hover {
                 color: #ffc107;
             }
+            .question-section {
+                cursor: move;
+                border: 2px solid #b3b3b3;
+                border-radius: 10px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+                margin: 1.5rem 0.75rem 1.5rem 0.75rem; /* top, right, bottom, left */
+                padding: 1.25rem 1.25rem 1rem 1.25rem;
+                transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+                background: #fff;
+            }
+            .custom-section-header {
+                background: linear-gradient(90deg, #f5f7fa 0%, #c3cfe2 100%);
+                border-radius: 10px 10px 0 0;
+                padding: 0.75rem 1rem;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+                border-bottom: 1px solid #e0e0e0;
+                cursor: move;
+            }
+            .section-badge {
+                display: inline-block;
+                background: #007bff;
+                color: #fff;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                text-align: center;
+                line-height: 32px;
+                font-weight: bold;
+                font-size: 1.1rem;
+                margin-right: 8px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            }
+            .section-title {
+                font-size: 1.1rem;
+                color: #333;
+            }
+            .drag-handle {
+                color: #888;
+                font-size: 1.3rem;
+                cursor: grab;
+                margin-left: 10px;
+                opacity: 0.7;
+                transition: opacity 0.2s;
+            }
+            .drag-handle:hover {
+                opacity: 1;
+                color: #007bff;
+            }
+            .question-section .question-label {
+                font-weight: 500;
+                font-size: 1rem;
+                color: #444;
+                margin: 0.5rem 0.5rem 0.75rem 0.5rem;
+                display: block;
+            }
+            .question-section .form-control {
+                margin: 0.5rem 0.5rem 0.75rem 0.5rem;
+            }
+            .remove-btn {
+                margin-left: 8px;
+            }
+            .question-section.drag-over {
+                border: 2px dashed #007bff !important;
+                background: #e9f5ff;
+                box-shadow: 0 4px 16px rgba(0,123,255,0.08);
+            }
+            .question-section .input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0.5rem 0.5rem 0.5rem;
+}
+.question-section .input-group .form-control {
+    flex: 1 1 auto;
+    margin: 0;
+}
+.question-section .input-group .btn {
+    flex: 0 0 auto;
+    margin: 0;
+}
         </style>
 
     </body>
