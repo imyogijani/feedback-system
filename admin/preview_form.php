@@ -34,11 +34,13 @@ if (!$form) {
     exit();
 }
 
-// Fetch questions/options from JSON in forms_combined
+// Decode questions JSON (sectioned format) from forms_combined
 $questions = [];
-if (!empty($form['questions'])) {
+if (isset($form['questions']) && !empty($form['questions'])) {
     $questions = json_decode($form['questions'], true);
-    if (!is_array($questions)) $questions = [];
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($questions)) {
+        $questions = [];
+    }
 }
 
 // Determine logo path
@@ -149,76 +151,127 @@ $logoPath = (!empty($form['profile_image']) && file_exists("uploads/profile_imag
         <div class="preview-content">
             <?php
             if ($questions):
-                $qSerial = 1;
                 foreach ($questions as $section):
                     $sectionTitle = isset($section['section_title']) ? $section['section_title'] : '';
-                    echo '<div style="margin-bottom:18px; margin-top:18px; padding:8px 0; border-bottom:1px solid #eee; font-weight:bold; font-size:17px; color:#673ab7;">' . htmlspecialchars($sectionTitle) . '</div>';
+            ?>
+                <div class="section-outline" style="border:2px solid #b3b3b3; border-radius:10px; margin-bottom:28px; margin-top:28px; box-shadow:0 2px 12px rgba(0,0,0,0.06); background:#fafaff; padding:18px 18px 10px 18px;">
+                    <div style="margin-bottom:18px; font-weight:bold; font-size:18px; color:#673ab7; border-bottom:1.5px solid #e0e0e0; padding-bottom:6px; letter-spacing:0.5px;">
+                        <?= htmlspecialchars($sectionTitle) ?>
+                    </div>
+                    <?php
                     if (!empty($section['questions']) && is_array($section['questions'])) {
+                        $sectionQSerial = 1;
                         foreach ($section['questions'] as $q) {
                             $qText = isset($q['text']) ? $q['text'] : (isset($q['question']) ? $q['question'] : (isset($q['question_text']) ? $q['question_text'] : ''));
                             $qType = isset($q['type']) ? strtolower($q['type']) : (isset($q['question_type']) ? strtolower($q['question_type']) : 'text');
-                            $opts = isset($q['options']) && is_array($q['options']) ? $q['options'] : [];
-            ?>
-                <div class="question">
-                    <div class="question-title"><?= ($qSerial++) . '. ' . htmlspecialchars($qText) ?></div>
-                    <div>
-                        <?php
-                        // Normalize question type for consistent handling
-                        switch ($qType) {
-                            case 'radio':
-                            case 'multiple_choice':
-                            case 'multiple choice':
-                                if ($opts) {
-                                    foreach ($opts as $opt) {
-                                        if (is_string($opt)) {
-                                            echo "<div class='option'><input type='radio' disabled> " . htmlspecialchars($opt) . "</div>";
+                        // Robustly decode and flatten options (handles array of JSON strings, double-encoded, etc.)
+                        $opts = [];
+                        if (isset($q['options'])) {
+                            if (is_array($q['options'])) {
+                                foreach ($q['options'] as $opt) {
+                                    if (is_string($opt)) {
+                                        $decoded = json_decode($opt, true);
+                                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                            // If option is a JSON array, merge its values
+                                            foreach ($decoded as $dopt) {
+                                                if (is_string($dopt)) $opts[] = $dopt;
+                                            }
+                                        } else {
+                                            $opts[] = $opt;
+                                        }
+                                    } elseif (is_array($opt)) {
+                                        foreach ($opt as $dopt) {
+                                            if (is_string($dopt)) $opts[] = $dopt;
                                         }
                                     }
-                                } else {
-                                    echo "<div class='option'><input type='radio' disabled> Option 1</div>";
                                 }
-                                break;
-                            case 'checkbox':
-                            case 'checkboxes':
-                                if ($opts) {
-                                    foreach ($opts as $opt) {
-                                        if (is_string($opt)) {
-                                            echo "<div class='option'><input type='checkbox' disabled> " . htmlspecialchars($opt) . "</div>";
-                                        }
+                            } elseif (is_string($q['options'])) {
+                                $decodedOpts = json_decode($q['options'], true);
+                                if (json_last_error() === JSON_ERROR_NONE && is_array($decodedOpts)) {
+                                    foreach ($decodedOpts as $dopt) {
+                                        if (is_string($dopt)) $opts[] = $dopt;
                                     }
                                 } else {
-                                    echo "<div class='option'><input type='checkbox' disabled> Option 1</div>";
+                                    $opts[] = $q['options'];
                                 }
-                                break;
-                            case 'dropdown':
-                            case 'select':
-                                echo "<select class='form-select' style='width: 100%; padding: 8px;' disabled>";
-                                echo "<option value=''>Select...</option>";
-                                if ($opts) {
-                                    foreach ($opts as $opt) {
-                                        if (is_string($opt)) {
-                                            echo "<option>" . htmlspecialchars($opt) . "</option>";
-                                        }
-                                    }
-                                } else {
-                                    echo "<option>No options available</option>";
-                                }
-                                echo "</select>";
-                                break;
-                            case 'date':
-                                echo "<input type='date' style='width: 100%; padding: 8px;' disabled>";
-                                break;
-                            default:
-                                echo "<input type='text' placeholder='Your answer' style='width: 100%; padding: 8px;' disabled>";
-                                break;
+                            }
                         }
-                        ?>
-                    </div>
-                </div>
-            <?php 
+                    ?>
+                        <div class="question">
+                            <div class="question-title"><?= ($sectionQSerial++) . '. ' . htmlspecialchars($qText) ?></div>
+                            <div>
+                                <?php
+                                // Normalize question type for consistent handling
+                                switch ($qType) {
+                                    case 'radio':
+                                    case 'multiple_choice':
+                                    case 'multiple choice':
+                                        if (!empty($opts)) {
+                                            $hasOption = false;
+                                            foreach ($opts as $opt) {
+                                                if (is_string($opt) && trim($opt) !== '') {
+                                                    echo "<div class='option'><input type='radio' > " . htmlspecialchars($opt) . "</div>";
+                                                    $hasOption = true;
+                                                }
+                                            }
+                                            if (!$hasOption) {
+                                                echo "<div class='option'><input type='radio' > No options available</div>";
+                                            }
+                                        } else {
+                                            echo "<div class='option'><input type='radio' > No options available</div>";
+                                        }
+                                        break;
+                                    case 'checkbox':
+                                    case 'checkboxes':
+                                        if (!empty($opts)) {
+                                            $hasOption = false;
+                                            foreach ($opts as $opt) {
+                                                if (is_string($opt) && trim($opt) !== '') {
+                                                    echo "<div class='option'><input type='checkbox' > " . htmlspecialchars($opt) . "</div>";
+                                                    $hasOption = true;
+                                                }
+                                            }
+                                            if (!$hasOption) {
+                                                echo "<div class='option'><input type='checkbox' > No options available</div>";
+                                            }
+                                        } else {
+                                            echo "<div class='option'><input type='checkbox' > No options available</div>";
+                                        }
+                                        break;
+                                    case 'dropdown':
+                                    case 'select':
+                                        echo "<select class='form-select' style='width: 100%; padding: 8px;' >";
+                                        echo "<option value=''>Select...</option>";
+                                        $hasOption = false;
+                                        if (!empty($opts)) {
+                                            foreach ($opts as $opt) {
+                                                if (is_string($opt) && trim($opt) !== '') {
+                                                    echo "<option>" . htmlspecialchars($opt) . "</option>";
+                                                    $hasOption = true;
+                                                }
+                                            }
+                                        }
+                                        if (!$hasOption) {
+                                            echo "<option>No options available</option>";
+                                        }
+                                        echo "</select>";
+                                        break;
+                                    case 'date':
+                                        echo "<input type='date' style='width: 100%; padding: 8px;' >";
+                                        break;
+                                    default:
+                                        echo "<input type='text' placeholder='Your answer' style='width: 100%; padding: 8px;' >";
+                                        break;
+                                }
+                                ?>
+                            </div>
+                        </div>
+                    <?php 
                         }
                     }
-                endforeach;
+                    ?>
+                </div>
+            <?php endforeach;
             else:
             ?>
                 <p>No questions available for this form.</p>
