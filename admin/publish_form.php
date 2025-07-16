@@ -47,11 +47,33 @@ if ($created_for !== null) {
 }
 
 // Sanitize business name consistently with save_form.php
+
+// Sanitize and lowercase business name consistently with save_form.php
 $sanitized_business_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $business_name);
 $sanitized_business_name = str_replace(' ', '_', $sanitized_business_name);
+$sanitized_business_name = strtolower($sanitized_business_name);
 
 $formFileName = "feedback-form-{$form_id}.php";
-$formLink = $baseUrl . "/feedback-system/forms_combined/" . ($sanitized_business_name ? $sanitized_business_name . '/' : '') . $formFileName;
+$formFolder = $sanitized_business_name;
+// If the sanitized business name is empty or '123456', try to find the actual folder
+if (empty($formFolder)) {
+    $formPathPattern = __DIR__ . "/../../forms/*/" . $formFileName;
+    $matches = glob($formPathPattern);
+    if (!empty($matches)) {
+        // Extract the folder name from the matched path
+        $parts = explode(DIRECTORY_SEPARATOR, $matches[0]);
+        $formsIndex = array_search('forms', $parts);
+        if ($formsIndex !== false && isset($parts[$formsIndex + 1])) {
+            $formFolder = $parts[$formsIndex + 1];
+        }
+    }
+}
+// Always use the actual created folder name in the link
+if (!empty($formFolder)) {
+    $formLink = $baseUrl . "/feedback-system/forms/" . $formFolder . '/' . $formFileName;
+} else {
+    $formLink = '';
+}
 
 // Use Google Chart API for QR code
 $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($formLink);

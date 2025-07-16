@@ -24,22 +24,22 @@ try {
     $stmt->execute([$form_id]);
 
     // Get question IDs to delete related options
-    $qStmt = $conn->prepare("SELECT id FROM questions WHERE form_id = ?");
+    $qStmt = $conn->prepare("SELECT id FROM forms_combined WHERE form_id = ?");
     $qStmt->execute([$form_id]);
     $questionIds = $qStmt->fetchAll(PDO::FETCH_COLUMN);
 
     if (!empty($questionIds)) {
         $inClause = implode(',', array_fill(0, count($questionIds), '?'));
-        $optStmt = $conn->prepare("DELETE FROM options WHERE question_id IN ($inClause)");
+        $optStmt = $conn->prepare("DELETE FROM forms_combined WHERE question_id IN ($inClause)");
         $optStmt->execute($questionIds);
     }
 
     // Delete questions
-    $stmt = $conn->prepare("DELETE FROM questions WHERE form_id = ?");
+    $stmt = $conn->prepare("DELETE FROM forms_combined WHERE form_id = ?");
     $stmt->execute([$form_id]);
 
     // Delete the form
-    $stmt = $conn->prepare("DELETE FROM forms WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM forms_combined WHERE id = ?");
     $stmt->execute([$form_id]);
 
     $conn->commit();

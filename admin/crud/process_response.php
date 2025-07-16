@@ -17,7 +17,7 @@ if (!$form_id) {
 
 try {
     // Get form info
-    $stmt = $conn->prepare("SELECT * FROM forms WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM forms_combined WHERE id = ?");
     $stmt->execute([$form_id]);
     $form = $stmt->fetch();
 
