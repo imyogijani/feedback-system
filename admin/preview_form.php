@@ -202,6 +202,9 @@ $logoPath = (!empty($form['profile_image']) && file_exists("uploads/profile_imag
                                 <?php
                                 // Normalize question type for consistent handling
                                 switch ($qType) {
+                                    case 'textarea':
+                                        echo "<textarea placeholder='Your answer' style='width: 100%; padding: 8px; min-height: 80px;'></textarea>";
+                                        break;
                                     case 'radio':
                                     case 'multiple_choice':
                                     case 'multiple choice':
@@ -225,6 +228,7 @@ $logoPath = (!empty($form['profile_image']) && file_exists("uploads/profile_imag
                                             echo "<div class='option'><input type='radio' name='" . htmlspecialchars($radioName) . "'> No options available</div>";
                                         }
                                         break;
+                                    
                                     case 'checkbox':
                                     case 'checkboxes':
                                         if (!empty($opts)) {

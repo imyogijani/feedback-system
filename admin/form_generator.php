@@ -225,14 +225,31 @@
             });
             </script>
                                 </div>
-<div class="mt-3">
-                                <button type="button" class="btn btn-secondary" onclick="addSection()">+ Add Section</button>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary" onclick="addSection()">+ Add Section</button>
 
-</div>
-<div class="mt-3">
-                                <button type="submit" class="btn btn-primary">Create Form</button>
+                </div>
+                <div   div class="mt-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="enableThankYou" name="enable_thankyou" value="1" onchange="toggleThankYouMessage()">
+                        <label class="form-check-label" for="enableThankYou">Enable Custom Thank You Message</label>
+                    </div>
+                </div>
 
+                <div class="mb-3" id="thankYouMessageContainer" style="display: none;">
+                    <label class="form-label">Custom Thank You Message</label>
+                    <textarea class="form-control" name="thankyou_message" id="thankyouMessageField" placeholder="Enter your custom thank you message here..."></textarea>
+                </div>
+                <div class="form-check mt-3">
+    <input class="form-check-input" type="checkbox" name="allow_another_response" id="allowAnotherResponse" value="1">
+    <label class="form-check-label" for="allowAnotherResponse">
+        Do you want to allow another response?
+    </label>
 </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Create Form</button>
+                </div>
                             </form>
                         </div>
                         <!-- / Content -->
@@ -711,6 +728,14 @@ function removeQuestion(element) {
                 if (alert) alert.remove();
             }, 5000);
         </script>
+
+        <script>
+                function toggleThankYouMessage() {
+                    const checkbox = document.getElementById('enableThankYou');
+                    const container = document.getElementById('thankYouMessageContainer');
+                    container.style.display = checkbox.checked ? 'block' : 'none';
+                }
+                </script>
 
         <!-- Add Font Awesome for icons -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
