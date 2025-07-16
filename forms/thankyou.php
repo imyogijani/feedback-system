@@ -55,10 +55,10 @@
         $form_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Debugging output
-        error_log("Debugging form_id: " . $form_id);
-        error_log("Debugging form_data: " . print_r($form_data, true));
-        echo "<div class='debug-output alert alert-info'>Debugging form_id: " . htmlspecialchars($form_id) . "</div>";
-        echo "<div class='debug-output alert alert-info'>Debugging form_data: " . htmlspecialchars(print_r($form_data, true)) . "</div>";
+        // error_log("Debugging form_id: " . $form_id);
+        // error_log("Debugging form_data: " . print_r($form_data, true));
+        // echo "<div class='debug-output alert alert-info'>Debugging form_id: " . htmlspecialchars($form_id) . "</div>";
+        // echo "<div class='debug-output alert alert-info'>Debugging form_data: " . htmlspecialchars(print_r($form_data, true)) . "</div>";
 
         $thankyou = $form_data['thankyou_message'] ?? '';
         $allow_another_response = $form_data['allow_another_response'] ?? 0;
