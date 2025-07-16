@@ -1,7 +1,7 @@
 <?php
-$host = "localhost"; // Database host
-$username = "root"; // Database username
-$password = ""; // Database password
+$host = "192.168.1.106"; // Database host
+$username = "feedback_user"; // Database username
+$password = "feedback_user"; // Database password
 
 $conn = new PDO("mysql:host=$host;dbname=feedback_system", $username, $password); // Create connection using PDO
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // Set error mode to exception

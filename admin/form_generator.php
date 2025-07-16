@@ -225,9 +225,14 @@
             });
             </script>
                                 </div>
-
+<div class="mt-3">
                                 <button type="button" class="btn btn-secondary" onclick="addSection()">+ Add Section</button>
+
+</div>
+<div class="mt-3">
                                 <button type="submit" class="btn btn-primary">Create Form</button>
+
+</div>
                             </form>
                         </div>
                         <!-- / Content -->
