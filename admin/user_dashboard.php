@@ -22,8 +22,10 @@ $page = max(1, filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1);
 $offset = ($page - 1) * $limit;
 
 try {
-    // Count total forms
-    $stmt = $conn->query("SELECT COUNT(*) AS total FROM forms_combined");
+    // Count total forms for current user (created by or created for)
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM forms_combined WHERE created_by = :user_id OR created_for = :user_id");
+    $stmt->bindValue(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
+    $stmt->execute();
     $totalForms = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     $totalPages = max(1, ceil($totalForms / $limit));
 
@@ -31,14 +33,16 @@ try {
     $page = min($page, $totalPages);
     $offset = ($page - 1) * $limit;
 
-    // Get paginated forms with creator info
+    // Get paginated forms with creator info for current user (created by or created for)
     $stmt = $conn->prepare("
         SELECT f.id, f.title, f.created_at, u.username AS created_by, u.firebase_uid 
         FROM forms_combined f 
         LEFT JOIN users u ON f.created_by = u.id AND f.created_for = u.id
+        WHERE f.created_by = :user_id OR f.created_for = :user_id
         ORDER BY f.created_at DESC 
         LIMIT :limit OFFSET :offset
-    "); 
+    ");
+    $stmt->bindValue(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -58,7 +62,7 @@ try {
         padding: 20px;
         margin-bottom: 20px;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     table {
@@ -68,7 +72,8 @@ try {
         table-layout: fixed;
     }
 
-    th, td {
+    th,
+    td {
         padding: 12px;
         border: 1px solid #ccc;
         text-align: left;
@@ -120,14 +125,21 @@ try {
         margin: 0;
         padding: 15px;
         border-radius: 5px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         max-width: 90%;
         animation: fadeIn 0.3s ease-in;
     }
 
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .action-links {
@@ -150,7 +162,7 @@ try {
         .table-responsive {
             overflow-x: auto;
         }
-        
+
         .action-links {
             flex-wrap: wrap;
         }
@@ -185,13 +197,12 @@ try {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php 
+                                        <?php
                                         $serial = $offset + 1;
-                                        foreach ($formList as $form): 
+                                        foreach ($formList as $form):
                                         ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($form['id']) ?></td>
-
                                                 <!-- <td><?= htmlspecialchars($serial++) ?></td> -->
                                                 <td><?= htmlspecialchars($form['title']) ?></td>
                                                 <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($form['created_at']))) ?></td>
@@ -202,29 +213,29 @@ try {
                                                     <?php endif; ?>
                                                 </td>
                                                 <td class="action-links">
-                                                    <a href="edit_form.php?id=<?= htmlspecialchars($form['id']) ?>" 
-                                                       class="btn btn-sm" title="Edit">
+                                                    <a href="edit_form.php?id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm" title="Edit">
                                                         <i class="fa-solid fa-pen-to-square" style="color: #007bff;"></i>
                                                     </a>
-                                                    <a href="delete_form.php?id=<?= htmlspecialchars($form['id']) ?>" 
-                                                       class="btn btn-sm"
-                                                       title="Delete" 
-                                                       onclick="return confirm('Are you sure you want to delete this form? This action cannot be undone.')">
+                                                    <a href="delete_form.php?id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm"
+                                                        title="Delete"
+                                                        onclick="return confirm('Are you sure you want to delete this form? This action cannot be undone.')">
                                                         <i class="fa-solid fa-trash" style="color: #dc3545;"></i>
                                                     </a>
-                                                    <a href="publish_form.php?id=<?= htmlspecialchars($form['id']) ?>" 
-                                                       class="btn btn-sm"
-                                                       title="Publish">
+                                                    <a href="publish_form.php?id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm"
+                                                        title="Publish">
                                                         <i class="fa-solid fa-upload" style="color: #28a745;"></i>
                                                     </a>
-                                                    <a href="preview_form.php?id=<?= htmlspecialchars($form['id']) ?>" 
-                                                       class="btn btn-sm"
-                                                       title="Preview">
+                                                    <a href="preview_form.php?id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm"
+                                                        title="Preview">
                                                         <i class="fa-solid fa-eye" style="color: #007bff;"></i>
                                                     </a>
-                                                    <a href="form_responses.php?form_id=<?= htmlspecialchars($form['id']) ?>" 
-                                                       class="btn btn-sm"
-                                                       title="View Responses">
+                                                    <a href="form_responses.php?form_id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm"
+                                                        title="View Responses">
                                                         <i class="fa-solid fa-list-check" style="color: #ff9800;"></i>
                                                     </a>
                                                 </td>
@@ -238,7 +249,7 @@ try {
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             <?php if ($totalPages > 1): ?>
                                 <div style="margin-top: 20px;">
                                     <nav aria-label="Page navigation">
@@ -248,11 +259,11 @@ try {
                                                     <a class="page-link" href="?page=1" title="First page">&laquo;</a>
                                                 </li>
                                             <?php endif; ?>
-                                            
+
                                             <?php
                                             $start = max(1, min($page - 2, $totalPages - 4));
                                             $end = min($totalPages, max(5, $page + 2));
-                                            
+
                                             for ($i = $start; $i <= $end; $i++):
                                             ?>
                                                 <li class="page-item <?= $i == $page ? 'active' : '' ?>">
