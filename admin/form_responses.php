@@ -102,7 +102,10 @@ $responses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
 <div class="container py-5">
-    <h2 class="mb-4 text-primary">Responses for: <?= htmlspecialchars($form['title']) ?></h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">Responses for: <?= htmlspecialchars($form['title']) ?></h2>
+        <a href="export_responses.php?form_id=<?= $form_id ?>&search_name=<?= urlencode($search_name) ?>&search_number=<?= urlencode($search_number) ?>" class="btn btn-success"><i class="bi bi-download"></i> Download CSV</a>
+    </div>
 
     <!-- Search Form -->
     <form method="get" class="mb-4">

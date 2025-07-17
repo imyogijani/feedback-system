@@ -39,7 +39,8 @@
                             <?php endif; ?>
 
                             <form method="post" action="crud/save_form.php" id="feedbackForm">
-                                <div class="row">
+                            <?php if ($_SESSION['role_id'] == 1 || $_SESSION['role_id'] == 2): ?>    
+                            <div class="row">
                                     <div class="col-md-8 mb-3">
                                         <label class="form-label">Created for</label>
                                         <select class="form-select" name="created_for" id="businessNameSelect"  onchange="showProfileImage()">
@@ -109,12 +110,13 @@
                                         <input type="file" class="form-control" name="company_logo" id="companyLogoInput">
                                     </div>
                                 </div>
+                                <?php endif; ?>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Form Type</label>
-                                        <select name="types1[]" class="form-select">
+                                        <select name="form_type" id="form_type" class="form-select">
                                             <option>Select Option</option>
-                                            <option value="Suggection">Suggection</option>
+                                            <option value="Suggestion">Suggestion</option>
                                             <option value="Complaints">Complaints</option>
                                             <option value="Feedback">Feedback</option>
                                         </select>
@@ -153,7 +155,7 @@
                 <div class="section-header custom-section-header d-flex justify-content-between align-items-center mb-2">
                     <div class="d-flex align-items-center">
                         <span class="section-badge me-2">1</span>
-                        <input type="text" class="form-control fw-bold section-title-input" name="section_titles[]" value="Add Section Name" style="width: 180px; font-weight: bold; font-size: 1.1rem; background: transparent; border: 2px solid #007bff; outline: none; padding: 0; margin: 0; color: #333; box-shadow: 0 0 0 2px #b3d7ff; transition: box-shadow 0.2s, border-color 0.2s;" onfocus="this.style.background='#fff'; this.style.border='2px solid #0056b3'; this.style.boxShadow='0 0 0 3px #80bdff';" onblur="this.style.background='transparent'; this.style.border='2px solid #007bff'; this.style.boxShadow='0 0 0 2px #b3d7ff';" />
+                        <input type="text" class="form-control fw-bold section-title-input" name="section_titles[]" value="" placeholder="Add Section Name" style="width: 180px; font-weight: bold; font-size: 1.1rem; background: transparent; border: 2px solid #007bff; outline: none; padding: 0; margin: 0; color: #333; box-shadow: 0 0 0 2px #b3d7ff; transition: box-shadow 0.2s, border-color 0.2s;" onfocus="this.style.background='#fff'; this.style.border='2px solid #0056b3'; this.style.boxShadow='0 0 0 3px #80bdff';" onblur="this.style.background='transparent'; this.style.border='2px solid #007bff'; this.style.boxShadow='0 0 0 2px #b3d7ff';" />
                     </div>
                     <span class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>
                 </div>
