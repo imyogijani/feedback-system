@@ -4,7 +4,7 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-if (!isset($_SESSION['role_id']) || $_SESSION['role_id'] != 1) {
+if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [1, 2, 3])) {
     header("Location: login.php");
     exit();
 }
@@ -310,7 +310,15 @@ $logoPath = (!empty($form['profile_image']) && file_exists("uploads/profile_imag
                 echo '<p>No questions available for this form.</p>';
             endif;
             ?>
+            <?php if ($_SESSION['role_id'] == 1) { ?>
             <a href="index.php" class="btn">Back to Dashboard</a>
+            <?php } ?>
+            <?php if ($_SESSION['role_id'] == 2) { ?>
+            <a href="moderator_dashboard.php" class="btn">Back to Moderator Dashboard</a>
+            <?php } ?>
+            <?php if ($_SESSION['role_id'] == 3) { ?>
+            <a href="user_dashboard.php" class="btn">Back to user Dashboard</a>
+            <?php } ?>
         </div>
          <footer style="text-align:center; color:#fff; font-size:13px; margin-top:30px; padding:18px 0 8px 0; background: linear-gradient(90deg, #673ab7 0%, #512da8 100%); border-radius:0 0 8px 8px;">
         &copy; <?= date('Y') ?> Feedback System. All rights reserved.

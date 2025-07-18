@@ -17,26 +17,9 @@ if ($form_id <= 0) {
 $conn->beginTransaction();
 
 try {
-    $stmt = $conn->prepare("DELETE FROM form_responses WHERE form_id = ?");
-    $stmt->execute([$form_id]);
-    // Delete responses
-    $stmt = $conn->prepare("DELETE FROM responses WHERE form_id = ?");
+    $stmt = $conn->prepare("DELETE FROM form_responses_combined WHERE form_id = ?");
     $stmt->execute([$form_id]);
 
-    // Get question IDs to delete related options
-    $qStmt = $conn->prepare("SELECT id FROM forms_combined WHERE form_id = ?");
-    $qStmt->execute([$form_id]);
-    $questionIds = $qStmt->fetchAll(PDO::FETCH_COLUMN);
-
-    if (!empty($questionIds)) {
-        $inClause = implode(',', array_fill(0, count($questionIds), '?'));
-        $optStmt = $conn->prepare("DELETE FROM forms_combined WHERE question_id IN ($inClause)");
-        $optStmt->execute($questionIds);
-    }
-
-    // Delete questions
-    $stmt = $conn->prepare("DELETE FROM forms_combined WHERE form_id = ?");
-    $stmt->execute([$form_id]);
 
     // Delete the form
     $stmt = $conn->prepare("DELETE FROM forms_combined WHERE id = ?");

@@ -55,24 +55,36 @@ $sanitized_business_name = strtolower($sanitized_business_name);
 
 $formFileName = "feedback-form-{$form_id}.php";
 $formFolder = $sanitized_business_name;
+
 // If the sanitized business name is empty or '123456', try to find the actual folder
-if (empty($formFolder)) {
-    $formPathPattern = __DIR__ . "/../../forms/*/" . $formFileName;
+// This handles cases where created_for might be null or business_name is not set
+if (empty($formFolder) || $formFolder === '123456') {
+    // Search for the form file within any subdirectory of 'forms/'
+    $formPathPattern =  "../forms/*/" . $formFileName;
     $matches = glob($formPathPattern);
+
     if (!empty($matches)) {
         // Extract the folder name from the matched path
         $parts = explode(DIRECTORY_SEPARATOR, $matches[0]);
-        $formsIndex = array_search('forms', $parts);
-        if ($formsIndex !== false && isset($parts[$formsIndex + 1])) {
-            $formFolder = $parts[$formsIndex + 1];
+        // The folder name will be the second to last element before the filename
+        $formFolder = $parts[count($parts) - 2];
+    } else {
+        // Fallback: if not found in a business-specific folder, check directly in 'forms/'
+        $formPathPattern =  "../forms/" . $formFileName;
+        $matches = glob($formPathPattern);
+        if (!empty($matches)) {
+            $formFolder = ''; // Indicates it's directly in the forms folder
         }
     }
 }
 // Always use the actual created folder name in the link
 if (!empty($formFolder)) {
     $formLink = $baseUrl . "/feedback-system/forms/" . $formFolder . '/' . $formFileName;
+} else if ($formFolder === '') {
+    // Case where form is directly in 'forms/' folder
+    $formLink = $baseUrl . "/feedback-system/forms/" . $formFileName;
 } else {
-    $formLink = '';
+    $formLink = ''; // Link remains empty if no folder is found
 }
 
 // Use Google Chart API for QR code

@@ -35,9 +35,9 @@ try {
 
     // Get paginated forms with creator info for current user (created by or created for)
     $stmt = $conn->prepare("
-        SELECT f.id, f.title, f.created_at, u.username AS created_by, u.firebase_uid 
+        SELECT f.id, f.title, f.created_at, f.questions_json, f.created_for, u.username AS created_by, u.firebase_uid 
         FROM forms_combined f 
-        LEFT JOIN users u ON f.created_by = u.id AND f.created_for = u.id
+        LEFT JOIN users u ON f.created_by = u.id
         WHERE f.created_by = :user_id OR f.created_for = :user_id
         ORDER BY f.created_at DESC 
         LIMIT :limit OFFSET :offset
@@ -177,7 +177,7 @@ try {
                 <?php require_once 'assets/inc/incNavbar.php'; ?>
                 <div class="content-wrapper">
                     <div class="container-xxl flex-grow-1 container-p-y">
-                        <h1>Admin Dashboard</h1>
+                        <h1>User Dashboard</h1>
 
                         <div class="card">
                             <h2 class="text-center">Total Feedback Forms: <?= htmlspecialchars($totalForms) ?></h2>

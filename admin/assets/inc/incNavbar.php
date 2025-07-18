@@ -1,15 +1,8 @@
 <?php
 // Get logged-in user ID and role
-$userId = $_SESSION['admin_logged_in'] ?? $_SESSION['moderator_logged_in'] ?? $_SESSION['user_id'] ?? null;
-if (isset($_SESSION['admin_logged_in'])) {
-    $role = 'admin';
-} elseif (isset($_SESSION['moderator_logged_in'])) {
-    $role = 'moderator';
-} elseif (isset($_SESSION['user_id'])) {
-    $role = 'user';
-} else {
-    $role = null;
-}
+$userId = $_SESSION['user_id'] ?? null;
+$role = $_SESSION['role'] ?? null;
+error_log('incNavbar: Session Role ID: ' . ($_SESSION['role_id'] ?? 'N/A') . ', Session Role: ' . ($_SESSION['role'] ?? 'N/A'));
 $userData = [];
 // Debugging line to check session data
 
@@ -24,10 +17,23 @@ if ($userId) {
 // Debugging line to check user data
 // Fallback values
 $username = htmlspecialchars($userData['username'] ?? 'User');
+// var_dump($username);
 $profileImage = !empty($userData['profile_image'])
     ? 'assets/images/' . htmlspecialchars($userData['profile_image'])
     : 'assets/img/default-avatar.png';
-$roleDisplay = ucfirst(htmlspecialchars($role ?? 'User'));
+if($_SESSION['role_id'] == 1) {
+    $roleDisplay = 'Admin';
+} elseif ($_SESSION['role_id'] == 2) {
+    $roleDisplay = 'Moderator';
+} else {
+    $roleDisplay = 'User';
+}
+// $roleDisplay = ucfirst(htmlspecialchars($role ?? 'User'));
+
+// Ensure $userId is set correctly for fetching user data
+if (!$userId && isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id'];
+}
 ?>
 
 <nav class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme" id="layout-navbar">
@@ -40,7 +46,7 @@ $roleDisplay = ucfirst(htmlspecialchars($role ?? 'User'));
     <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
         <!-- Welcome Message -->
         <div class="navbar-nav align-items-center">
-            <span class="nav-item text-muted" style="font-size: 1.2rem; font-weight: 600;">Welcome, <?= $username ?>!</span>
+            <span class="nav-item text-muted" style="font-size: 1.2rem; font-weight: 600;">Welcome, <?= $username ?> (<?= $roleDisplay ?>)!</span>
         </div>
         
         <ul class="navbar-nav flex-row align-items-center ms-auto">

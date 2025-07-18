@@ -4,10 +4,11 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-if (!isset($_SESSION['role_id']) || $_SESSION['role_id'] != 1) {
+if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [1, 2, 3])) {
     header("Location: login.php");
     exit();
 }
+
 
 include('config/config.php');
 include('assets/inc/incHeader.php');
@@ -223,8 +224,16 @@ $responses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
         </div>
     <?php endif; ?>
-
-    <a href="index.php" class="btn btn-secondary mt-4">Back to Dashboard</a>
+ <?php if ($_SESSION['role_id'] == 1) { ?>
+            <a href="index.php" class="btn btn-secondary mt-4">Back to Dashboard</a>
+            <?php } ?>
+            <?php if ($_SESSION['role_id'] == 2) { ?>
+            <a href="moderator_dashboard.php" class="btn btn-secondary mt-4">Back to Moderator Dashboard</a>
+            <?php } ?>
+            <?php if ($_SESSION['role_id'] == 3) { ?>
+            <a href="user_dashboard.php" class="btn btn-secondary mt-4">Back to user Dashboard</a>
+            <?php } ?>
+    <!-- <a href="index.php" class="btn btn-secondary mt-4">Back to Dashboard</a> -->
 </div>
 
 <script>

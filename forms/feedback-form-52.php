@@ -8,7 +8,7 @@ if (isset($conn)) {
 }
 
 // Set formId to the actual form's ID (from forms_combined table), not from session
-$formId = 45;
+$formId = 52;
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -112,7 +112,7 @@ if (!empty($form['questions_json'])) {
         </div>
         <h2 class="text-center title"><?= htmlspecialchars($form['title']) ?></h2>
         <p><?= htmlspecialchars($form['description']) ?></p>
-        <form method="POST" action="../process_response.php">
+        <form method="POST" action="process_response.php">
             <input type="hidden" name="form_id" value="<?= htmlspecialchars($formId) ?>">
 
             <?php if (!empty($form['firstname']) || !empty($form['lastname'])): ?>

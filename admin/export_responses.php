@@ -2,7 +2,7 @@
 session_start();
 include('config/config.php');
 
-if (!isset($_SESSION['role_id']) || $_SESSION['role_id'] != 1) {
+if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [1, 2, 3])) {
     header("Location: login.php");
     exit();
 }
@@ -44,19 +44,14 @@ if (is_array($questions_data)) {
 }
 
 // Fetch all responses for the form
-$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
-$search_number = isset($_GET['search_number']) ? trim($_GET['search_number']) : '';
+$search_query = isset($_GET['search_query']) ? trim($_GET['search_query']) : '';
 
 $sql = "SELECT * FROM form_responses_combined WHERE form_id = :form_id";
 $params = [':form_id' => $form_id];
 
-if (!empty($search_name)) {
-    $sql .= " AND (firstname LIKE :search_name OR lastname LIKE :search_name)";
-    $params[':search_name'] = '%' . $search_name . '%';
-}
-if (!empty($search_number)) {
-    $sql .= " AND number LIKE :search_number";
-    $params[':search_number'] = '%' . $search_number . '%';
+if (!empty($search_query)) {
+    $sql .= " AND (firstname LIKE :search_query OR lastname LIKE :search_query OR email LIKE :search_query OR number LIKE :search_query)";
+    $params[':search_query'] = '%' . $search_query . '%';
 }
 
 $sql .= " ORDER BY submitted_at DESC, id ASC";
