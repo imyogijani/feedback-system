@@ -2,10 +2,15 @@
 session_start();
 
 
-include('../admin/config/config.php');
+include('config/config.php');
 
-
-if (isset($_SESSION['user_id'])) {
+if (isset($_SESSION['admin_logged_in'])) {
+    $user_id = $_SESSION['admin_logged_in'];
+    $user_type = 'admin';
+} elseif (isset($_SESSION['moderator_logged_in'])) {
+    $user_id = $_SESSION['moderator_logged_in'];
+    $user_type = 'moderator';
+} elseif (isset($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
     $user_type = 'user';
 } else {
@@ -41,10 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Update user data
     if (empty($error_message)) {
         if ($uploadFileName) {
-            $stmt = $conn->prepare("UPDATE demo_requests SET email = ?, profile_image = ? WHERE id = ?");
+            $stmt = $conn->prepare("UPDATE demo_requests SET  email = ?, profile_image = ? WHERE id = ?");
             $stmt->execute([$email, $uploadFileName, $user_id]);
         } else {
-            $stmt = $conn->prepare("UPDATE demo_requests SET  email = ? WHERE id = ?");
+            $stmt = $conn->prepare("UPDATE demo_requests SET email = ? WHERE id = ?");
             $stmt->execute([$email, $user_id]);
         }
 
@@ -91,7 +96,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
                     <!-- <div class="mb-3">
                         <label for="name" class="form-label">Full Name</label>
-                        <input type="text" name="name" id="name" class="form-control" required value="<?= htmlspecialchars($user['username']) ?>">
+                        <input type="text" name="name" id="name" class="form-control" required value="<?= htmlspecialchars($user['name']) ?>">
                     </div> -->
 
                     <div class="mb-3">

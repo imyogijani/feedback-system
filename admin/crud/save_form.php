@@ -111,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->beginTransaction();
 
         // Insert form details
-        $stmt = $conn->prepare("INSERT INTO forms_combined (title, description, form_type, created_by, created_for, firstname, lastname, email, number, thankyou_message, allow_another_response) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $description, $form_type, $created_by, $created_for, $firstname, $lastname, $email, $number, $thankyou_message, $allow_another_response]);
+        $stmt = $conn->prepare("INSERT INTO forms_combined (title, description, form_type, created_by, created_for, firstname, lastname, email, number, questions_json, thankyou_message, allow_another_response) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $description, $form_type, $created_by, $created_for, $firstname, $lastname, $email, $number,$questions_json, $thankyou_message, $allow_another_response]);
         $form_id = $conn->lastInsertId();
         $_SESSION['form_id'] = $form_id; // Set formId from the generated ID
 

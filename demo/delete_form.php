@@ -1,7 +1,7 @@
 <?php
 session_start();
 // Allow users with role_id = 1 (admin), 2 (moderator), or 3 (user) to access this page
-if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [4])) {
+if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [1, 2, 3])) {
     header("Location: login.php");
     exit();
 }
@@ -17,29 +17,12 @@ if ($form_id <= 0) {
 $conn->beginTransaction();
 
 try {
-    $stmt = $conn->prepare("DELETE FROM form_responses WHERE form_id = ?");
-    $stmt->execute([$form_id]);
-    // Delete responses
-    $stmt = $conn->prepare("DELETE FROM responses WHERE form_id = ?");
+    $stmt = $conn->prepare("DELETE FROM form_responses_combined WHERE form_id = ?");
     $stmt->execute([$form_id]);
 
-    // Get question IDs to delete related options
-    $qStmt = $conn->prepare("SELECT id FROM questions WHERE form_id = ?");
-    $qStmt->execute([$form_id]);
-    $questionIds = $qStmt->fetchAll(PDO::FETCH_COLUMN);
-
-    if (!empty($questionIds)) {
-        $inClause = implode(',', array_fill(0, count($questionIds), '?'));
-        $optStmt = $conn->prepare("DELETE FROM options WHERE question_id IN ($inClause)");
-        $optStmt->execute($questionIds);
-    }
-
-    // Delete questions
-    $stmt = $conn->prepare("DELETE FROM questions WHERE form_id = ?");
-    $stmt->execute([$form_id]);
 
     // Delete the form
-    $stmt = $conn->prepare("DELETE FROM forms WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM forms_combined WHERE id = ?");
     $stmt->execute([$form_id]);
 
     $conn->commit();

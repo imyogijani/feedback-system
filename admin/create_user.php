@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = trim($_POST['email']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $role_id = intval($_POST['role_id']);
+    $business_name = trim($_POST['business_name']);
     $created_by = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
     $created_at = date('Y-m-d H:i:s');
     $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
@@ -34,8 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($username) || empty($email) || empty($_POST['password']) || !in_array($role_id, $valid_roles)) {
         $error = $_SESSION['role_id'] == 2 ? "Moderators can only create users. All fields are required." : "All fields are required and role must be moderator or user.";
     } else {
-        $stmt = $conn->prepare("INSERT INTO users (username, email, password, role_id, created_by, created_at, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        if ($stmt->execute([$username, $email, $password, $role_id, $created_by, $created_at, $start_date, $end_date])) {
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password, role_id, created_by, created_at, start_date, end_date, business_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt->execute([$username, $email, $password, $role_id, $created_by, $created_at, $start_date, $end_date, $business_name])) {
             $success = "User created successfully.";
         } else {
             $error = "Failed to create user. Email may already exist.";
@@ -80,6 +81,10 @@ include('assets/inc/incHeader.php');
                             <div class="mb-3">
                                 <label>Email</label>
                                 <input type="email" name="email" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Business Name</label>
+                                <input type="text" name="business_name" class="form-control">
                             </div>
                             <div class="mb-3">
                                 <label>Password</label>

@@ -1,6 +1,6 @@
 <?php
 session_start();
-include('config/config.php'); // Adjust path as needed
+include('../config/config.php'); // Adjust path as needed
 
 // Ensure PDO is set to throw exceptions for better error handling during development
 if (isset($conn)) {
@@ -8,7 +8,7 @@ if (isset($conn)) {
 }
 
 // Set formId to the actual form's ID (from forms_combined table), not from session
-$formId = 45;
+$formId = 60;
 
 // Basic validation for form ID
 if ($formId <= 0) {

@@ -1,54 +1,25 @@
 <?php
-// ini_set('session.gc_maxlifetime', 300);
-// session_set_cookie_params(lifetime_or_options: 300);
 session_start();
+// Allow admin, moderator, and user to access analytics
+$isGoogleLogin = isset($_SESSION['auth_method']) && $_SESSION['auth_method'] === 'google';
+$isTraditional = isset($_SESSION['role_id']) && in_array($_SESSION['role_id'], [4]);
 
-include('../admin/config/config.php');
+if (!($isGoogleLogin || $isTraditional)) {
+    header("Location: login.php");
+    exit();
+}
 
-// Set session on login
-// if (!isset($_SESSION['login_time'])) {
-//     $_SESSION['login_time'] = time();
-// }
-
-// Set session duration (in seconds)
-$session_duration = 300; // 24 hours = 86400 seconds
-
-// Remaining time
-// $time_left = ($_SESSION['login_time'] + $session_duration) - time();
-// $email = $_SESSION['email'] ?? $_SESSION['demo_user'] ?? null;
-
-
-// if ($time_left <= 0) {
-//     // Set approved=0 for this user in demo_requests if email is set
-//     if ($email) {
-//         $stmt = $conn->prepare("UPDATE demo_requests SET approved = 0 WHERE email = ?");
-//         $stmt->execute([$email]);
-//     }
-//     session_unset();
-//     session_destroy();
-//     header("Location: login.php?expired=1");
-//     exit();
-// }
-// // Allow admin, moderator, and user to access analytics
-// // $isGoogleLogin = isset($_SESSION['auth_method']) && $_SESSION['auth_method'] === 'google';
-// $isTraditional = isset($_SESSION['role_id']) && in_array($_SESSION['role_id'], [4]);
-
-// if (!$isTraditional) {
-//     header("Location: login.php");
-//     exit();
-// }
-
-include('../admin/config/config.php');
+include('config/config.php');
 
 // Fetch forms: admin sees all, moderator sees their own and their created users' forms, others see only their own
 if (isset($_SESSION['role_id']) && $_SESSION['role_id'] == 1) {
     // Admin: show all, include firebase_uid for Google login detection
-    $forms = $conn->query("SELECT f.id, f.title, u.firebase_uid FROM forms f LEFT JOIN users u ON f.created_by = u.id")->fetchAll(PDO::FETCH_ASSOC);
+    $forms = $conn->query("SELECT f.id, f.title, f.questions_json, f.created_for, u.firebase_uid FROM forms_combined f LEFT JOIN users u ON f.created_by = u.id")->fetchAll(PDO::FETCH_ASSOC);
 } else {
     // For moderator, user, and Google login: show only forms created by this user
     $user_id = $_SESSION['user_id'] ?? 0;
-    $stmt = $conn->prepare("SELECT f.id, f.title, u.firebase_uid FROM forms f LEFT JOIN users u ON f.created_by = u.id WHERE f.created_by = ?");
-    $stmt->execute([$user_id]);
+    $stmt = $conn->prepare("SELECT f.id, f.title, f.questions_json, f.created_for, u.firebase_uid FROM forms_combined f LEFT JOIN users u ON f.created_by = u.id WHERE f.created_by = ? OR f.created_for = ?");
+    $stmt->execute([$user_id, $user_id]);
     $forms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -68,21 +39,51 @@ $negative = 0;
 
 // Fetch and analyze responses only if form is selected
 if ($formId) {
-    $stmt = $conn->prepare("SELECT id FROM questions WHERE form_id = ? AND question_type = 'radio'");
+    // Fetch the selected form's details, specifically questions_json
+    $stmt = $conn->prepare("SELECT questions_json FROM forms_combined WHERE id = ?");
     $stmt->execute([$formId]);
-    $radioQuestions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $selectedForm = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    foreach ($radioQuestions as $qid) {
-        $stmt = $conn->prepare("SELECT answer FROM responses WHERE question_id = ?");
-        $stmt->execute([$qid]);
-        $responses = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    if ($selectedForm && !empty($selectedForm['questions_json'])) {
+        $formQuestions = json_decode($selectedForm['questions_json'], true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($formQuestions)) {
+            $formQuestions = [];
+        }
 
-        foreach ($responses as $r) {
-            $r = strtolower(trim($r));
-            if ($r === 'yes') {
-                $positive++;
-            } elseif ($r === 'no') {
-                $negative++;
+        // Collect question texts for radio buttons to match with responses
+        $radioQuestionTexts = [];
+        foreach ($formQuestions as $section) {
+            foreach (($section['questions'] ?? []) as $q) {
+                if (isset($q['type']) && strtolower($q['type']) === 'radio') {
+                    $radioQuestionTexts[] = $q['text'];
+                }
+            }
+        }
+
+        if (!empty($radioQuestionTexts)) {
+            // Fetch all responses for the selected form
+            $stmt = $conn->prepare("SELECT responses_json FROM form_responses_combined WHERE form_id = ?");
+            $stmt->execute([$formId]);
+            $allResponses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($allResponses as $responseEntry) {
+                $responsesJson = json_decode($responseEntry['responses_json'], true);
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($responsesJson)) {
+                    continue;
+                }
+
+                foreach ($responsesJson as $sectionResponse) {
+                    foreach (($sectionResponse['answers'] ?? []) as $answerEntry) {
+                        if (in_array($answerEntry['question_text'], $radioQuestionTexts)) {
+                            $answer = strtolower(trim($answerEntry['answer']));
+                            if ($answer === 'yes') {
+                                $positive++;
+                            } elseif ($answer === 'no') {
+                                $negative++;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -235,39 +236,6 @@ include('assets/inc/incHeader.php');
             document.querySelectorAll('.alert').forEach(alert => alert.remove());
         }, 5000);
     </script>
-    <!-- <script>
-        // PHP seconds passed to JS
-        let timeLeft = <?= $time_left ?>;
-
-        function formatTime(seconds) {
-            const d = Math.floor(seconds / (3600 * 24));
-            const h = Math.floor((seconds % (3600 * 24)) / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = Math.floor(seconds % 60);
-            return `${d}d ${h}h ${m}m ${s}s`;
-        }
-
-        function countdown() {
-            if (timeLeft <= 0) {
-                // Call session_expire.php to update approved=0 and destroy session
-                fetch('session_expire.php', {
-                        method: 'POST'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        window.location.href = 'login.php?session_expired=1';
-                    });
-                return;
-            }
-
-            document.getElementById('sessionCountdown').textContent = formatTime(timeLeft);
-            timeLeft--;
-        }
-
-        // Start countdown every second
-        countdown(); // call immediately
-        setInterval(countdown, 1000);
-    </script> -->
 
 </body>
 

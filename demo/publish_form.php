@@ -6,8 +6,7 @@ if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [4])) {
     exit();
 }
 
-include('../admin/config/config.php');
-
+include('config/config.php');
 include('assets/inc/incHeader.php');
 include "../phpqrcode/qrlib.php";
 
@@ -19,12 +18,12 @@ if ($form_id <= 0 || ($publish_status !== 0 && $publish_status !== 1)) {
 }
 
 // Update publish status
-$stmt = $conn->prepare("UPDATE forms SET published = :status WHERE id = :id");
+$stmt = $conn->prepare("UPDATE demo_forms_combined SET published = :status WHERE id = :id");
 $stmt->execute([':status' => $publish_status, ':id' => $form_id]);
 
 
 // Fetch form title for display
-$stmt = $conn->prepare("SELECT title FROM forms WHERE id = :id");
+$stmt = $conn->prepare("SELECT * FROM demo_forms_combined WHERE id = :id");
 $stmt->execute([':id' => $form_id]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$form) {
@@ -33,7 +32,60 @@ if (!$form) {
 
 // Public URL to view the form
 $baseUrl = "http://" . $_SERVER['HTTP_HOST'];
-$formLink = $baseUrl . "/feedback-system/demo/crud/view_form.php?id=" . $form_id;
+
+// Fetch created_for and business_name
+$created_for = $form['created_for'] ?? null;
+$business_name = '';
+
+if ($created_for !== null) {
+    $stmtUser = $conn->prepare("SELECT business_name FROM demo_requests WHERE id = :id");
+    $stmtUser->execute([':id' => $created_for]);
+    $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+    if ($user) {
+        $business_name = $user['business_name'];
+    }
+}
+
+// Sanitize business name consistently with save_form.php
+
+// Sanitize and lowercase business name consistently with save_form.php
+$sanitized_business_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $business_name);
+$sanitized_business_name = str_replace(' ', '_', $sanitized_business_name);
+$sanitized_business_name = strtolower($sanitized_business_name);
+
+$formFileName = "feedback-form-{$form_id}.php";
+$formFolder = $sanitized_business_name;
+
+// If the sanitized business name is empty or '123456', try to find the actual folder
+// This handles cases where created_for might be null or business_name is not set
+if (empty($formFolder) || $formFolder === '123456') {
+    // Search for the form file within any subdirectory of 'forms/'
+    $formPathPattern =  "../forms/*/" . $formFileName;
+    $matches = glob($formPathPattern);
+
+    if (!empty($matches)) {
+        // Extract the folder name from the matched path
+        $parts = explode(DIRECTORY_SEPARATOR, $matches[0]);
+        // The folder name will be the second to last element before the filename
+        $formFolder = $parts[count($parts) - 2];
+    } else {
+        // Fallback: if not found in a business-specific folder, check directly in 'forms/'
+        $formPathPattern =  "../forms/" . $formFileName;
+        $matches = glob($formPathPattern);
+        if (!empty($matches)) {
+            $formFolder = ''; // Indicates it's directly in the forms folder
+        }
+    }
+}
+// Always use the actual created folder name in the link
+if (!empty($formFolder)) {
+    $formLink = $baseUrl . "/feedback-system/forms/" . $formFolder . '/' . $formFileName;
+} else if ($formFolder === '') {
+    // Case where form is directly in 'forms/' folder
+    $formLink = $baseUrl . "/feedback-system/forms/" . $formFileName;
+} else {
+    $formLink = ''; // Link remains empty if no folder is found
+}
 
 // Use Google Chart API for QR code
 $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($formLink);
@@ -64,8 +116,7 @@ $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . 
                     <div class="container-xxl flex-grow-1 container-p-y">
                         <!-- Your page content goes here -->
                         <h2 class="card-title text-success mb-3">✅ Form Published Successfully</h2>
-                        <p><strong>Form:</strong> <?= htmlspecialchars($form['title']) ?></p>
-
+                        <p><strong>Form:</strong> <?= htmlspecialchars($form['title'])  ?></p>
                         <div class="mb-3">
                             <label><strong>Public Form Link:</strong></label>
                             <div class="input-group">
@@ -79,7 +130,26 @@ $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . 
 
                         <h5 class="card-title">Generate QR Code</h5>
                         <p>Scan the QR code below to access the form quickly:</p>
-                        <img src="<?= $qrCodeUrl ?>" alt="QR Code" class="img-thumbnail">
+                        <img src="<?= $qrCodeUrl ?>" alt="QR Code" class="img-thumbnail" id="qrImage">
+                        <div class="mt-2">
+                            <a href="<?= $qrCodeUrl ?>" id="downloadQrBtn" class="btn btn-outline-success">Download QR Code</a>
+                        </div>
+                        <script>
+                        document.getElementById('downloadQrBtn').addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const url = this.href;
+                            fetch(url)
+                                .then(resp => resp.blob())
+                                .then(blob => {
+                                    const link = document.createElement('a');
+                                    link.href = window.URL.createObjectURL(blob);
+                                    link.download = 'form-qr-code.png';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                });
+                        });
+                        </script>
 
 
                         <div class="mb-3">
@@ -91,6 +161,7 @@ $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . 
                                 <?php elseif ($_SESSION['role_id'] == 3): ?>
                                     <a href="user_dashboard.php" class="btn btn-dark mt-4">&larr; Back to User Dashboard</a>
                                 <?php else: ?>
+                            
                                     <a href="user_dashboard.php" class="btn btn-dark mt-4">&larr; Back to Home</a>
                                 <?php endif; ?>
                             <?php else: ?>
