@@ -73,13 +73,13 @@ if ($search_number !== '') {
 }
 
 // Count total
-$total_stmt = $conn->prepare("SELECT COUNT(*) FROM form_responses_combined WHERE $conditions");
+$total_stmt = $conn->prepare("SELECT COUNT(*) FROM demo_form_responses_combined WHERE $conditions");
 $total_stmt->execute($params);
 $total_responses = $total_stmt->fetchColumn();
 $total_pages = ceil($total_responses / $limit);
 
 // Fetch data
-$query = "SELECT * FROM form_responses_combined WHERE $conditions ORDER BY submitted_at DESC, id ASC LIMIT :limit OFFSET :offset";
+$query = "SELECT * FROM demo_form_responses_combined WHERE $conditions ORDER BY submitted_at DESC, id ASC LIMIT :limit OFFSET :offset";
 $stmt = $conn->prepare($query);
 foreach ($params as $k => $v) {
     $stmt->bindValue($k, $v);

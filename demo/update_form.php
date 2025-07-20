@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->beginTransaction();
 
         // 1. Update form title
-        $stmt = $conn->prepare("UPDATE forms_combined SET title = :title WHERE id = :id");
+        $stmt = $conn->prepare("UPDATE demo_forms_combined SET title = :title WHERE id = :id");
         $stmt->execute([
             ':title' => $form_title,
             ':id' => $form_id
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $options_str = isset($q['options']) ? trim($q['options']) : '';
 
             // Update question text & type
-            $qstmt = $conn->prepare("UPDATE forms_combined SET question_text = :text, question_type = :type WHERE id = :id AND form_id = :form_id");
+            $qstmt = $conn->prepare("UPDATE demo_forms_combined SET question_text = :text, question_type = :type WHERE id = :id AND form_id = :form_id");
             $qstmt->execute([
                 ':text' => $question_text,
                 ':type' => $question_type,
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sections[] = $section;
         }
         $questions_json = json_encode($sections, JSON_UNESCAPED_UNICODE);
-        $updateJson = $conn->prepare("UPDATE forms_combined SET questions_json = :qjson WHERE id = :id");
+        $updateJson = $conn->prepare("UPDATE demo_forms_combined SET questions_json = :qjson WHERE id = :id");
         $updateJson->execute([
             ':qjson' => $questions_json,
             ':id' => $form_id

@@ -49,7 +49,7 @@
         $form_id = $_GET['form_id'];    // fetch thank you message from `forms` table:
         $stmt = $conn->prepare("SELECT fc.thankyou_message, fc.allow_another_response, u.business_name 
                         FROM demo_forms_combined fc
-                        JOIN users u ON fc.created_for = u.id
+                        JOIN demo_requests u ON fc.created_for = u.id
                         WHERE fc.id = ?");
         $stmt->execute([$form_id]);
         $form_data = $stmt->fetch(PDO::FETCH_ASSOC);

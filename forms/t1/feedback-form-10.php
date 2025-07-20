@@ -8,7 +8,7 @@ if (isset($conn)) {
 }
 
 // Set formId to the actual form's ID (from demo_forms_combined table), not from session
-$formId = 7;
+$formId = 10;
 
 // Basic validation for form ID
 if ($formId <= 0) {

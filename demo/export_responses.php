@@ -2,7 +2,7 @@
 session_start();
 include('config/config.php');
 
-if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [1, 2, 3])) {
+if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [4])) {
     header("Location: login.php");
     exit();
 }
@@ -16,7 +16,7 @@ if ($form_id <= 0) {
 }
 
 // Fetch form title and questions
-$stmt = $conn->prepare("SELECT title, questions_json FROM forms_combined WHERE id = :form_id");
+$stmt = $conn->prepare("SELECT title, questions_json FROM demo_forms_combined WHERE id = :form_id");
 $stmt->execute([':form_id' => $form_id]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -46,7 +46,7 @@ if (is_array($questions_data)) {
 // Fetch all responses for the form
 $search_query = isset($_GET['search_query']) ? trim($_GET['search_query']) : '';
 
-$sql = "SELECT * FROM form_responses_combined WHERE form_id = :form_id";
+$sql = "SELECT * FROM demo_form_responses_combined WHERE form_id = :form_id";
 $params = [':form_id' => $form_id];
 
 if (!empty($search_query)) {

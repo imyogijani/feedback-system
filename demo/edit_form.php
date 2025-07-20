@@ -13,9 +13,9 @@ include('assets/inc/incHeader.php');
 
 $form_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Fetch form
-$stmt = $conn->prepare("SELECT * FROM demo_forms_combined WHERE id = :id");
-$stmt->execute([':id' => $form_id]);
+// Fetch form details
+$stmt = $conn->prepare("SELECT * FROM demo_forms_combined WHERE id = ?");
+$stmt->execute([$form_id]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$form) die("Form not found");
 
