@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // var_dump($_POST); // Debugging line to check POST data
     $firstname = trim($_POST['firstname']);
     $lastname = trim($_POST['lastname']);
-    $name = $firstname . ' ' . $lastname;
+    $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $mobile = trim($_POST['mobile']);
     $image = $_FILES['profile_image'] ?? null;
