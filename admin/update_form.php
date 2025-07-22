@@ -121,16 +121,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Redirect based on role_id
         if (isset($_SESSION['role_id'])) {
             if ($_SESSION['role_id'] == 1) {
-                header("Location: index.php"); // Admin dashboard
+                header("Location: forms_lists.php"); // Admin dashboard
             } elseif ($_SESSION['role_id'] == 2) {
                 header("Location: moderator_dashboard.php"); // Moderator dashboard
             } elseif ($_SESSION['role_id'] == 3) {
                 header("Location: user_dashboard.php"); // User dashboard (for both traditional and Google logins)
             } else {
-                header("Location: index.php"); // Default fallback
+                header("Location: forms_lists.php"); // Default fallback
             }
         } else {
-            header("Location: index.php");
+            header("Location: forms_lists.php");
         }
         exit();
     } catch (PDOException $e) {
@@ -138,6 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("Failed to update form: " . $e->getMessage());
     }
 } else {
-    header("Location: index.php");
+    header("Location: forms_lists.php");
     exit();
 }

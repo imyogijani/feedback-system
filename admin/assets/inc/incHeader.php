@@ -1,6 +1,43 @@
 <?php
-// This file should only contain the <head> section and necessary includes.
-// No HTML before the DOCTYPE declaration.
+
+// Fetch Total Users
+$stmt = $conn->query("SELECT COUNT(*) AS total_users FROM users");
+$totalUsers = $stmt->fetch(PDO::FETCH_ASSOC)['total_users'] ?? 0;
+
+// Fetch Active Users
+$stmt = $conn->query("SELECT COUNT(*) AS active_users FROM users WHERE is_active = 1");
+$activeUsers = $stmt->fetch(PDO::FETCH_ASSOC)['active_users'] ?? 0;
+
+try {
+    $stmt = $conn->query("SELECT 
+        COUNT(*) AS total_requests,
+        SUM(CASE WHEN approved = 1 THEN 1 ELSE 0 END) AS total_approved,
+        SUM(CASE WHEN approved = 0 OR approved IS NULL THEN 1 ELSE 0 END) AS total_pending
+        FROM demo_requests
+    ");
+    $demoData = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Error fetching demo_requests summary: " . $e->getMessage());
+    $demoData = ['total_requests' => 0, 'total_approved' => 0, 'total_pending' => 0];
+}
+
+
+try {
+    $stmt = $conn->prepare("
+        SELECT 
+            first_name,last_name,username, email, mobile, business_name, role_id, created_at, profile_image,
+
+            (SELECT role_name FROM roles WHERE id = users.role_id LIMIT 1) AS role_name
+        FROM users 
+        WHERE id = :user_id
+        LIMIT 1
+    ");
+    $stmt->execute([':user_id' => $_SESSION['user_id']]);
+    $profileData = $stmt->fetch(PDO::FETCH_ASSOC);
+    $profileImage = $profileData['profile_image'] ?? null;
+} catch (PDOException $e) {
+    error_log('Profile fetch error: ' . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default" data-assets-path="../assets/" data-template="vertical-menu-template-free">

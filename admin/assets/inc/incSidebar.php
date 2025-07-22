@@ -62,6 +62,12 @@
                 <div data-i18n="Analytics">Form Generator</div>
             </a>
         </li>
+        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'forms_lists.php' ? 'active' : ''; ?>">
+            <a href="forms_lists.php" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-home-circle"></i>
+                <div data-i18n="Analytics">Forms Lists</div>
+            </a>
+        </li>
         <?php if (isset($_SESSION['role_id']) && in_array($_SESSION['role_id'], [1, 2])): ?>
             <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'create_user.php' ? 'active' : ''; ?>">
                 <a href="create_user.php" class="menu-link">
@@ -83,6 +89,12 @@
                 <a href="demo_request.php" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-home-circle"></i>
                     <div data-i18n="Analytics">Demo Requests</div>
+                </a>
+            </li>
+            <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'user_request.php' ? 'active' : ''; ?>">
+                <a href="user_request.php" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-home-circle"></i>
+                    <div data-i18n="Analytics">User Requests</div>
                 </a>
             </li>
         <?php endif; ?>

@@ -77,10 +77,15 @@ if (!$userId && isset($_SESSION['user_id'])) {
                         <div class="dropdown-divider"></div>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="profile.php">
-                            <i class="bx bx-user me-2"></i>
-                            <span class="align-middle">My Profile</span>
-                        </a>
+                        <!-- Profile Trigger -->
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#profileModal" class="dropdown-item">
+                        <i class="bx bx-user me-2"></i>
+                        <span class="align-middle">My Profile</span>
+                    </a>
+
+                        <!-- <a class="dropdown-item" href="profile.php">
+                          
+                        </a> -->
                     </li>
                     <li>
                         <div class="dropdown-divider"></div>

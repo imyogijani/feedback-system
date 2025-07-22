@@ -30,16 +30,16 @@ try {
     // Redirect after deletion based on role_id
     if (isset($_SESSION['role_id'])) {
         if ($_SESSION['role_id'] == 1) {
-            header("Location: index.php?deleted=1"); // Admin dashboard
+            header("Location: forms_lists.php?deleted=1"); // Admin dashboard
         } elseif ($_SESSION['role_id'] == 2) {
             header("Location: moderator_dashboard.php?deleted=1"); // Moderator dashboard
         } elseif ($_SESSION['role_id'] == 3) {
             header("Location: user_dashboard.php?deleted=1"); // User dashboard
         } else {
-            header("Location: index.php?deleted=1"); // Default fallback
+            header("Location: forms_lists.php?deleted=1"); // Default fallback
         }
     } else {
-        header("Location: index.php?deleted=1");
+        header("Location: forms_lists.php?deleted=1");
     }
     exit();
 } catch (Exception $e) {

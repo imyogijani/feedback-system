@@ -29,6 +29,7 @@ $page = max(1, filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1);
 $offset = ($page - 1) * $limit;
 
 
+
 try {
     // Count total forms
     $stmt = $conn->query("SELECT COUNT(*) AS total FROM forms_combined");
@@ -260,72 +261,7 @@ require_once 'assets/inc/incHeader.php';
                 <div class="content-wrapper">
                     <div class="container-xxl flex-grow-1 container-p-y">
                         <h1 class="mb-3">Admin Dashboard</h1>
-                       
-                            <?php if (isset($_SESSION['role_id']) && in_array($_SESSION['role_id'], [1, 2])): ?>
-                            <div class="row g-4 mb-4">
-
-                                <!-- Total Users Card -->
-                                <div class="col-md-3 col-lg-3">
-                                    <div class="dashboard-card bg-palette-soft-blue">
-                                        <h5>Total Users</h5>
-                                        <h2><?= htmlspecialchars($totalUsers) ?></h2>
-                                        <a href="all_users_list.php" class="btn btn-light mt-2">
-                                        View All Users
-                                    </a>
-                                    </div>
-                                </div>
-
-                                <!-- Active Users Card -->
-                                <div class="col-md-3 col-lg-3">
-                                    <div class="dashboard-card bg-palette-medium-blue">
-                                        <h5>Active Users</h5>
-                                        <h2><?= htmlspecialchars($activeUsers) ?></h2>
-                                        <a href="active_users.php" class="btn btn-light mt-2">View Active Users</a>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-lg-3">
-                                    <div class="dashboard-card bg-palette-medium-blue">
-                                        <h5>Total Demo Requests</h5>
-                                        <h2><?= htmlspecialchars($demoData['total_requests']) ?></h2>
-                                        <a href="demo_requests_list.php" class="btn btn-light mt-2">View All</a>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-lg-3">
-                                    <div class="dashboard-card bg-palette-medium-blue">
-                                        <h5>Approved Requests</h5>
-                                                <h2><?= htmlspecialchars($demoData['total_approved']) ?></h2>
-                                            <a href="demo_requests_list.php?approved=1" class="btn btn-light mt-2">Approved</a>
-                                                <!-- <a href="demo_requests_list.php?approved=1" class="btn btn-dark btn-sm mt-1 w-100">Approved</a> -->
-                                    </div>
-                                </div>
-
-                                <!-- Demo Requests Card -->
-                                <!-- <div class="col-md-12 col-lg-4">
-                                    <div class="dashboard-card bg-palette-deep-blue">
-                                        <h5>Total Demo Requests</h5>
-                                        <h2><?= htmlspecialchars($demoData['total_requests']) ?></h2>
-                                        <a href="demo_requests_list.php" class="btn btn-light mt-2">View All</a>
-
-                                        <div class="row mt-3 g-2">
-                                            <div class="col-6">
-                                                <h6>Approved</h6>
-                                                <h3><?= htmlspecialchars($demoData['total_approved']) ?></h3>
-                                                <a href="demo_requests_list.php?approved=1" class="btn btn-dark btn-sm mt-1 w-100">Approved</a>
-                                            </div>
-                                            <div class="col-6">
-                                                <h6>Pending</h6>
-                                                <h3><?= htmlspecialchars($demoData['total_pending']) ?></h3>
-                                                <a href="demo_requests_list.php?approved=0" class="btn btn-dark btn-sm mt-1 w-100">Pending</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div> -->
-
-                            </div>
-                        <?php endif; ?>
-
-
-                        <!-- <div class="card">
+                         <div class="card">
                             <h2 class="text-center">Total Feedback Forms: <?= htmlspecialchars($totalForms) ?></h2>
                         </div>
 
@@ -425,7 +361,7 @@ require_once 'assets/inc/incHeader.php';
                                     </nav>
                                 </div>
                             <?php endif; ?>
-                        </div> -->
+                        </div>
 
                         <?php if (isset($_SESSION['success_message'])): ?>
                             <div class="alert alert-success" role="alert">
@@ -448,7 +384,63 @@ require_once 'assets/inc/incHeader.php';
         <div class="layout-overlay layout-menu-toggle"></div>
     </div>
 
- 
+    <!-- Profile Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg rounded-4">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="profileModalLabel">My Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row">
+          <div class="col-md-4 text-center mb-3">
+            <img src="<?= htmlspecialchars($profileImage ?? 'assets/images/default_profile.png') ?>" alt="Profile" class="img-thumbnail rounded-circle shadow" style="width:150px;height:150px;">
+          </div>
+          <div class="col-md-8">
+            <table class="table table-borderless">
+              <tr>
+                <th>Name:</th>
+                <td><?= htmlspecialchars($profileData['username'] ?? 'N/A') ?></td>
+              </tr>
+              <tr>
+                <th>Email:</th>
+                <td><?= htmlspecialchars($profileData['email'] ?? 'N/A') ?></td>
+              </tr>
+              <tr>
+                <th>Mobile:</th>
+                <td><?= htmlspecialchars($profileData['mobile'] ?? 'N/A') ?></td>
+              </tr>
+              <tr>
+                <th>Role:</th>
+                <td><?= htmlspecialchars($profileData['role_name'] ?? 'User') ?></td>
+              </tr>
+              <tr>
+                <th>Business:</th>
+                <td><?= htmlspecialchars($profileData['business_name'] ?? 'N/A') ?></td>
+              </tr>
+              <tr>
+                <th>Joined:</th>
+                <td><?= htmlspecialchars(date('d-m-Y', strtotime($profileData['created_at'] ?? date('Y-m-d')))) ?></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+       <a href="edit_profile.php" class="btn btn-primary">
+    <i class="fa-solid fa-user-edit"></i> Edit Profile
+</a>
+
+</button>
+
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 

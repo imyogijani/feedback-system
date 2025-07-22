@@ -1,5 +1,5 @@
 <?php
-$host = "192.168.1.106"; // Database host
+$host = "192.168.1.109"; // Database host
 $username = "feedback_user"; // Database username
 $password = "feedback_user"; // Database password
 

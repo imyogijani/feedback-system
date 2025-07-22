@@ -311,7 +311,7 @@ $logoPath = (!empty($form['profile_image']) && file_exists("uploads/profile_imag
             endif;
             ?>
             <?php if ($_SESSION['role_id'] == 1) { ?>
-            <a href="index.php" class="btn">Back to Dashboard</a>
+            <a href="forms_lists.php" class="btn">Back to Forms Lists</a>
             <?php } ?>
             <?php if ($_SESSION['role_id'] == 2) { ?>
             <a href="moderator_dashboard.php" class="btn">Back to Moderator Dashboard</a>

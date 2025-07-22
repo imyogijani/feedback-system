@@ -255,6 +255,7 @@
                             </form>
                         </div>
                         <!-- / Content -->
+ <?php require_once 'assets/inc/incFooter.php'; ?>
 
                     </div>
                     <!-- / Content wrapper -->
@@ -831,7 +832,6 @@ function removeQuestion(element) {
     margin: 0;
 }
         </style>
-
     </body>
 
     </html>

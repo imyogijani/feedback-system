@@ -225,7 +225,7 @@ $responses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     <?php endif; ?>
  <?php if ($_SESSION['role_id'] == 1) { ?>
-            <a href="index.php" class="btn btn-secondary mt-4">Back to Dashboard</a>
+            <a href="forms_lists.php" class="btn btn-secondary mt-4">Back to Forms Lists </a>
             <?php } ?>
             <?php if ($_SESSION['role_id'] == 2) { ?>
             <a href="moderator_dashboard.php" class="btn btn-secondary mt-4">Back to Moderator Dashboard</a>

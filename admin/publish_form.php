@@ -155,16 +155,16 @@ $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . 
                         <div class="mb-3">
                             <?php if (isset($_SESSION['role_id'])): ?>
                                 <?php if ($_SESSION['role_id'] == 1): ?>
-                                    <a href="index.php" class="btn btn-dark mt-4">&larr; Back to Admin Dashboard</a>
+                                    <a href="forms_lists.php" class="btn btn-dark mt-4">&larr; Back to Admin Forms Lists </a>
                                 <?php elseif ($_SESSION['role_id'] == 2): ?>
-                                    <a href="moderator_dashboard.php" class="btn btn-dark mt-4">&larr; Back to Moderator Dashboard</a>
+                                    <a href="moderator_dashboard.php" class="btn btn-dark mt-4">&larr; Back to Moderator Forms Lists Dashboard</a>
                                 <?php elseif ($_SESSION['role_id'] == 3): ?>
                                     <a href="user_dashboard.php" class="btn btn-dark mt-4">&larr; Back to User Dashboard</a>
                                 <?php else: ?>
-                                    <a href="index.php" class="btn btn-dark mt-4">&larr; Back to Home</a>
+                                    <a href="forms_lists.php" class="btn btn-dark mt-4">&larr; Back to Forms Lists</a>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <a href="index.php" class="btn btn-dark mt-4">&larr; Back to Home</a>
+                                <a href="forms_lists.php" class="btn btn-dark mt-4">&larr; Back to Forms Lists</a>
                             <?php endif; ?>
                         </div>
 
