@@ -8,7 +8,7 @@ if (isset($conn)) {
 }
 
 // Set formId to the actual form's ID (from forms_combined table), not from session
-$formId = 63;
+$formId = 80;
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -91,18 +91,16 @@ if (!empty($form['questions_json'])) {
                         $img = $user['profile_image'] ?? '';
                         $label = $user['business_name'] ?? '';
                         $imgPath = '';
-                        if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-                            $imgPath = '../../admin/assets/imaaesges/' . $img;
-                        } else {
-                            $imgPath = $img;
-                        }
-                        if (!$imgPath || !file_exists(__DIR__ . '/' . $imgPath)) {
-                            $imgPath = 'https://ui-avatars.com/api/?name=' . urlencode($label) . '&background=cccccc&color=222222&size=100';
-                        }
-                        echo '<img src="' . htmlspecialchars($imgPath) . '" alt="Profile Image" style="max-width:56px; max-height:56px; border-radius:8px; border:1.5px solid #fff; background:#fff;">';
+                        if (  sts&&ms/)rs&o0) {
+s s0 hs!tp !&&0       ./ad.aa)!s=!sss  g          $imgPh = 'http m'http                        }
+         s f(xisms(h = $}ielse {g;
+                  f    Im smylh = e="m;:5            6px; max-hei}
+ght:;eu:bsf;Imackground:#fff;">';
                     }
-                    if ($user && !empty($user['business_name'])) {
-                        echo '<span style="font-size:1.2rem;font-weight:600; color:#fff; display:inline-block; white-space:nowrap;">' . htmlspecialchars($user['business_name']) . '</span>';
+                if ($user && !empty($user['busiss_name'])) {
+                 } else     {                echo '<span st$imgPathl=o$g;t-                    } else {        size:}
+1.2rem;font-wt$imgPaehgt0$img;;o                   ifr(!}
+$:#fPblh)k{hite-space:naifp(!$;" Pblh)k{htmlspecialchars($user['business_name']) . '</span>';
                     } else {
                         echo '<span style="font-size:1.2rem;font-weight:600; color:#fff; display:inline-block; white-space:nowrap;">Feedback Form</span>';
                     }

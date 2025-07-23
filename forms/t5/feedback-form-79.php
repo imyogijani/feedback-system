@@ -7,8 +7,8 @@ if (isset($conn)) {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 
-// Set formId to the actual form's ID (from demo_forms_combined table), not from session
-$formId = 10;
+// Set formId to the actual form's ID (from forms_combined table), not from session
+$formId = 79;
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -17,7 +17,7 @@ if ($formId <= 0) {
 }
 
 // Fetch form details
-$stmt = $conn->prepare("SELECT * FROM demo_forms_combined WHERE id = ?");
+$stmt = $conn->prepare("SELECT * FROM forms_combined WHERE id = ?");
 $stmt->execute([$formId]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC); // Fetch as associative array
 
@@ -30,7 +30,7 @@ if (!$form) {
 // Fetch user info (business_name, profile_image) if the form is associated with a user
 $user = null;
 if (!empty($form['created_for'])) {
-    $stmt = $conn->prepare("SELECT * FROM demo_requests WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->execute([$form['created_for']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 }
@@ -92,11 +92,14 @@ if (!empty($form['questions_json'])) {
                         $label = $user['business_name'] ?? '';
                         $imgPath = '';
                         if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-                            $imgPath = '../../admin/assets/imaaesges/' . $img;
+                            $imgPath = '../../admin/assets/images/' . $img;
+                            if (!file_exists(__DIR__ . '/../../admin/assets/images/' . $img)) {
+                                $imgPath = 'https://ui-avatars.com/api/?name=' . urlencode($label) . '&background=cccccc&color=222222&size=100';
+                            }
                         } else {
                             $imgPath = $img;
                         }
-                        if (!$imgPath || !file_exists(__DIR__ . '/' . $imgPath)) {
+                        if (!$imgPath) {
                             $imgPath = 'https://ui-avatars.com/api/?name=' . urlencode($label) . '&background=cccccc&color=222222&size=100';
                         }
                         echo '<img src="' . htmlspecialchars($imgPath) . '" alt="Profile Image" style="max-width:56px; max-height:56px; border-radius:8px; border:1.5px solid #fff; background:#fff;">';

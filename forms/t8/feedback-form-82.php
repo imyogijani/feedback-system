@@ -8,7 +8,7 @@ if (isset($conn)) {
 }
 
 // Set formId to the actual form's ID (from forms_combined table), not from session
-$formId = 43;
+$formId = 82;
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -92,7 +92,7 @@ if (!empty($form['questions_json'])) {
                         $label = $user['business_name'] ?? '';
                         $imgPath = '';
                         if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-                            $imgPath = '../../admin/assets/imaaesges/' . $img;
+                            $imgPath = '../../admin/assets/images/' . $img;
                         } else {
                             $imgPath = $img;
                         }

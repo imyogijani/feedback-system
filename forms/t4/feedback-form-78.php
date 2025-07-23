@@ -8,7 +8,7 @@ if (isset($conn)) {
 }
 
 // Set formId to the actual form's ID (from forms_combined table), not from session
-$formId = 42;
+$formId = 78;
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -92,11 +92,14 @@ if (!empty($form['questions_json'])) {
                         $label = $user['business_name'] ?? '';
                         $imgPath = '';
                         if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-                            $imgPath = '../../admin/assets/imaaesges/' . $img;
+                            $imgPath = '../../admin/assets/images/' . $img;
+                            if (!file_exists(__DIR__ . '/../../admin/assets/images/' . $img)) {
+                                $imgPath = 'https://ui-avatars.com/api/?name=' . urlencode($label) . '&background=cccccc&color=222222&size=100';
+                            }
                         } else {
                             $imgPath = $img;
                         }
-                        if (!$imgPath || !file_exists(__DIR__ . '/' . $imgPath)) {
+                        if (!$imgPath) {
                             $imgPath = 'https://ui-avatars.com/api/?name=' . urlencode($label) . '&background=cccccc&color=222222&size=100';
                         }
                         echo '<img src="' . htmlspecialchars($imgPath) . '" alt="Profile Image" style="max-width:56px; max-height:56px; border-radius:8px; border:1.5px solid #fff; background:#fff;">';
