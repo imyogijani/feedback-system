@@ -56,17 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Handle company logo upload for both new and existing users
         if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
-                // Validate file type
-                $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
-                $ext = strtolower(pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION));
-                
-                if (!in_array($ext, $allowed_types)) {
-                    error_log("Invalid file type uploaded: " . $ext);
-                    throw new Exception("Invalid file type. Only JPG, JPEG, PNG and GIF are allowed.");
-                }
-                $safe_name = 'company_' . $created_for . '.' . $ext; // Use created_for ID for unique name
-                $upload_dir = '../assets/images';
-            $upload_dir = str_replace('\\', '/', $upload_dir);
+            $ext = pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION);
+            $safe_name = 'company_' . $created_for . '.' . $ext; // Use created_for ID for unique name
+            $upload_dir = '../assets/images/';
 
 
             if (!is_dir($upload_dir)) {
@@ -93,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Always use the selected or submitted company name for folder creation
     if ($created_for !== null && $created_for !== '' && empty($company_name)) {
         // If a business is selected (not new), fetch its business_name from DB
-        $stmt = $conn->prepare("SELECT business_namechoe FROM users WHERE id = ?");
+        $stmt = $conn->prepare("SELECT business_name FROM users WHERE id = ?");
         $stmt->execute([$created_for]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         $business_name = $user ? $user['business_name'] : '';

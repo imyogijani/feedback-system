@@ -79,10 +79,10 @@ if (empty($formFolder) || $formFolder === '123456') {
 }
 // Always use the actual created folder name in the link
 if (!empty($formFolder)) {
-    $formLink = $baseUrl . "/feedback-system/forms/" . $formFolder . '/' . $formFileName;
+    $formLink = $baseUrl . "/forms/" . $formFolder . '/' . $formFileName;
 } else if ($formFolder === '') {
     // Case where form is directly in 'forms/' folder
-    $formLink = $baseUrl . "/feedback-system/forms/" . $formFileName;
+    $formLink = $baseUrl . "/forms/" . $formFileName;
 } else {
     $formLink = ''; // Link remains empty if no folder is found
 }
