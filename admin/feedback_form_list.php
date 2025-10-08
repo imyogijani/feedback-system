@@ -6,7 +6,7 @@ include('assets/inc/incHeader.php');
 // Fetch feedback forms: admin sees all, moderator sees only their own and their users', others see only their own
 if (isset($_SESSION['role_id']) && $_SESSION['role_id'] == 1) {
     // Admin: show all
-    $stmt = $conn->prepare("SELECT f.id, f.title, f.form_type, f.created_at, u.username AS created_by FROM forms f LEFT JOIN users u ON f.created_by = u.id ORDER BY f.created_at DESC");
+    $stmt = $conn->prepare("SELECT f.id, f.title, f.form_type, f.created_at, u.username AS created_by FROM forms_combined f LEFT JOIN users u ON f.created_by = u.id ORDER BY f.created_at DESC");
     $stmt->execute();
 } elseif (isset($_SESSION['role_id']) && $_SESSION['role_id'] == 2) {
     // Moderator: show forms created by themselves and by users they created
@@ -17,13 +17,13 @@ if (isset($_SESSION['role_id']) && $_SESSION['role_id'] == 1) {
     $userIds = $userStmt->fetchAll(PDO::FETCH_COLUMN);
     $allIds = array_merge([$moderator_id], $userIds);
     $inClause = implode(',', array_fill(0, count($allIds), '?'));
-    $sql = "SELECT f.id, f.title, f.form_type, f.created_at, u.username AS created_by FROM forms f LEFT JOIN users u ON f.created_by = u.id WHERE f.created_by IN ($inClause) ORDER BY f.created_at DESC";
+    $sql = "SELECT f.id, f.title, f.form_type, f.created_at, u.username AS created_by FROM forms_combined f LEFT JOIN users u ON f.created_by = u.id WHERE f.created_by IN ($inClause) ORDER BY f.created_at DESC";
     $stmt = $conn->prepare($sql);
     $stmt->execute($allIds);
 } else {
     // Non-admin/moderator: show only forms created by this user
     $user_id = $_SESSION['user_id'] ?? 0;
-    $stmt = $conn->prepare("SELECT f.id, f.title, f.form_type, f.created_at, u.username AS created_by FROM forms f LEFT JOIN users u ON f.created_by = u.id WHERE f.created_by = ? ORDER BY f.created_at DESC");
+    $stmt = $conn->prepare("SELECT f.id, f.title, f.form_type, f.created_at, u.username AS created_by FROM forms_combined f LEFT JOIN users u ON f.created_by = u.id WHERE f.created_by = ? ORDER BY f.created_at DESC");
     $stmt->execute([$user_id]);
 }
 $forms = $stmt->fetchAll(PDO::FETCH_ASSOC);

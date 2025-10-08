@@ -1,7 +1,6 @@
 <?php
 session_start();
-include('../../admin/config/config.php');
-
+include('../config/config.php');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $_SESSION['error'] = "Invalid request method.";
@@ -18,7 +17,7 @@ if (!$form_id) {
 
 try {
     // Get form info
-    $stmt = $conn->prepare("SELECT * FROM forms WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM forms_combined WHERE id = ?");
     $stmt->execute([$form_id]);
     $form = $stmt->fetch();
 
@@ -45,34 +44,38 @@ try {
     $stmtResponse->execute([$form_id, $firstname, $lastname, $email, $number]);
 
     $response_id = $_POST['form_id'] ?? 0;
+    $form_response_id = $conn->lastInsertId();
 
     // Insert into user_responses
-    $stmtAnswer = $conn->prepare("INSERT INTO responses (form_id, question_id, answer) VALUES (?, ?, ?)");
+    $stmtAnswer = $conn->prepare("INSERT INTO responses (form_response_id,form_id, question_id, answer) VALUES (?,?, ?, ?)");
 
-    foreach ($questions as $q) {
-        $qid = $q['id'];
-        $fieldName = 'q_' . $qid;
+foreach ($questions as $q) {
+    $qid = $q['id'];
+    $fieldName = 'q_' . $qid;
 
-        $answer = $_POST[$fieldName] ?? null;
+    $answer = $_POST[$fieldName] ?? null;
 
-        // Handle checkbox arrays
-        if ($q['question_type'] === 'checkbox' && is_array($answer)) {
-            $answer = json_encode($answer);
-        }
-
-        // Default rating to 0 if not selected
-        if (in_array($q['question_type'], ['rating_star', 'rating_heart', 'rating_thumb']) && $answer === null) {
-            $answer = '0';
-        }
-
-        // Insert answer (even if empty)
-        $stmtAnswer->execute([$response_id, $qid, $answer ?? '']);
+    // Handle checkbox arrays
+    if ($q['question_type'] === 'checkbox' && is_array($answer)) {
+        $answer = json_encode($answer);
     }
+
+    // Default rating to 0 if not selected
+    if (in_array($q['question_type'], ['rating_star', 'rating_heart', 'rating_thumb']) && $answer === null) {
+        $answer = '0';
+    }
+
+    // Insert answer, now using the fetched $form_response_id
+    // Pass $form_response_id as the first parameter
+    $stmtAnswer->execute([$form_response_id,$response_id, $qid, $answer ?? '']);
+}
 
     $conn->commit();
 
     $_SESSION['success'] = "Your response has been submitted.";
-    header("Location: ../crud/thank_you.php");
+    
+    // Redirect to thank_you.php with form_id as GET param
+    header("Location: ../crud/thank_you.php?form_id=" . urlencode($form_id));
     exit;
 } catch (Exception $e) {
     if ($conn->inTransaction()) {
@@ -80,6 +83,6 @@ try {
     }
     error_log("Form submission error: " . $e->getMessage());
     $_SESSION['error'] = "There was an error saving your response.";
-    header("Location: ../view_form.php?id=" . urlencode($form_id));
+    header("Location: view_form.php?id=" . urlencode($form_id));
     exit;
 }

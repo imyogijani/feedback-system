@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: forgot-password.php');
         exit;
     } else {
-        $stmt = $conn->prepare('SELECT id FROM demo_requests WHERE email = ?');
+        $stmt = $conn->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($user) {

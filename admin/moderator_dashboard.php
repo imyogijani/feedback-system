@@ -10,30 +10,47 @@ if (!isset($_SESSION['role_id']) || $_SESSION['role_id'] != 2) {
     exit();
 }
 
-include('config/config.php');
-include('assets/inc/incHeader.php');
+require_once 'config/config.php';
+require_once 'assets/inc/incHeader.php';
+
+// Pagination settings
 $limit = 10; // Forms per page
-$page = isset($_GET['page']) && is_numeric($_GET['page']) ? intval($_GET['page']) : 1;
+$page = max(1, filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1);
 $offset = ($page - 1) * $limit;
 
-$moderator_id = $_SESSION['user_id'];
+try {
+    // Count total forms for current user (created by or created for)
+    $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM forms_combined WHERE created_by = :user_id OR created_for = :user_id");
+    $stmt->bindValue(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
+    $stmt->execute();
+    $totalForms = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    $totalPages = max(1, ceil($totalForms / $limit));
 
-// Count total forms for moderator only
-$countSql = "SELECT COUNT(*) AS total FROM forms WHERE created_by = ?";
-$countStmt = $conn->prepare($countSql);
-$countStmt->execute([$moderator_id]);
-$row = $countStmt->fetch(PDO::FETCH_ASSOC);
-$totalForms = $row['total'];
-$totalPages = ceil($totalForms / $limit);
+    // Ensure page number doesn't exceed total pages
+    $page = min($page, $totalPages);
+    $offset = ($page - 1) * $limit;
 
-// Get paginated forms for moderator only (not users they created)
-$sql = "SELECT f.id, f.title, f.created_at, u.username AS created_by FROM forms f LEFT JOIN users u ON f.created_by = u.id WHERE f.created_by = ? ORDER BY f.created_at DESC LIMIT ? OFFSET ?";
-$stmt = $conn->prepare($sql);
-$stmt->bindValue(1, $moderator_id, PDO::PARAM_INT);
-$stmt->bindValue(2, $limit, PDO::PARAM_INT);
-$stmt->bindValue(3, $offset, PDO::PARAM_INT);
-$stmt->execute();
-$formList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Get paginated forms with creator info for current user (created by or created for)
+    $stmt = $conn->prepare("
+        SELECT f.id, f.title, f.created_at, f.questions_json, f.created_for, u.username AS created_by, u.firebase_uid 
+        FROM forms_combined f 
+        LEFT JOIN users u ON f.created_by = u.id
+        WHERE f.created_by = :user_id OR f.created_for = :user_id
+        ORDER BY f.created_at DESC 
+        LIMIT :limit OFFSET :offset
+    ");
+    $stmt->bindValue(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $formList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Database error: " . $e->getMessage());
+    $_SESSION['alert_message'] = "An error occurred while fetching the forms.";
+    $formList = [];
+    $totalPages = 0;
+    $totalForms = 0;
+}
 ?>
 <!-- Font Awesome CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -97,78 +114,127 @@ $formList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <!-- Content wrapper -->
                 <div class="content-wrapper">
-                    <!-- Content -->
                     <div class="container-xxl flex-grow-1 container-p-y">
-                        <!-- Your page content goes here -->
                         <h1>Moderator Dashboard</h1>
 
                         <div class="card">
-                            <h2 class="text-center">Total Feedback Forms: <?= $totalForms ?></h2>
+                            <h2 class="text-center">Total Feedback Forms: <?= htmlspecialchars($totalForms) ?></h2>
                         </div>
 
                         <div class="card">
                             <h3>Form List</h3>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>S.No</th>
-                                        <th>Form Title</th>
-                                        <th>Created At</th>
-                                        <th>Created By</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php $serial = 1; ?>
-                                    <?php foreach ($formList as $form): ?>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
                                         <tr>
-                                            <td><?= $serial ?></td>
-                                            <td><?= htmlspecialchars($form['title']) ?></td>
-                                            <td><?= htmlspecialchars($form['created_at']) ?></td>
-                                            <td><?= htmlspecialchars($form['created_by']) ?></td>
-                                            <td>
-                                                <a href="edit_form.php?id=<?= $form['id'] ?>" title="Edit">
-                                                    <i class="fa-solid fa-pen-to-square" style="color: #0d6efd;"></i>
-                                                </a>
-                                                <a href="delete_form.php?id=<?= $form['id'] ?>" title="Delete" onclick="return confirm('Are you sure?')">
-                                                    <i class="fa-solid fa-trash" style="color: #dc3545;"></i>
-                                                </a>
-                                                <a href="publish_form.php?id=<?= $form['id'] ?>" title="Publish">
-                                                    <i class="fa-solid fa-upload" style="color: #198754;"></i>
-                                                </a>
-                                            </td>
+                                            <th width="5%">S.No</th>
+                                            <th width="25%">Form Title</th>
+                                            <th width="20%">Created At</th>
+                                            <th width="25%">Created By</th>
+                                            <th width="25%">Action</th>
                                         </tr>
-                                        <?php $serial++; ?>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                            <div style="margin-top: 20px;">
-                                <nav>
-                                    <ul class="pagination">
-                                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                                            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                                <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
-                                            </li>
-                                        <?php endfor; ?>
-                                    </ul>
-                                </nav>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $serial = $offset + 1;
+                                        foreach ($formList as $form):
+                                        ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($form['id']) ?></td>
+                                                <!-- <td><?= htmlspecialchars($serial++) ?></td> -->
+                                                <td><?= htmlspecialchars($form['title']) ?></td>
+                                                <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($form['created_at']))) ?></td>
+                                                <td>
+                                                    <?= htmlspecialchars($form['created_by']) ?>
+                                                    <?php if (!empty($form['firebase_uid'])): ?>
+                                                        <span class="badge bg-info">Google</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td class="action-links">
+                                                    <a href="edit_form.php?id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm" title="Edit">
+                                                        <i class="fa-solid fa-pen-to-square" style="color: #007bff;"></i>
+                                                    </a>
+                                                    <a href="delete_form.php?id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm"
+                                                        title="Delete"
+                                                        onclick="return confirm('Are you sure you want to delete this form? This action cannot be undone.')">
+                                                        <i class="fa-solid fa-trash" style="color: #dc3545;"></i>
+                                                    </a>
+                                                    <a href="publish_form.php?id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm"
+                                                        title="Publish">
+                                                        <i class="fa-solid fa-upload" style="color: #28a745;"></i>
+                                                    </a>
+                                                    <a href="preview_form.php?id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm"
+                                                        title="Preview">
+                                                        <i class="fa-solid fa-eye" style="color: #007bff;"></i>
+                                                    </a>
+                                                    <a href="form_responses.php?form_id=<?= htmlspecialchars($form['id']) ?>"
+                                                        class="btn btn-sm"
+                                                        title="View Responses">
+                                                        <i class="fa-solid fa-list-check" style="color: #ff9800;"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        <?php if (empty($formList)): ?>
+                                            <tr>
+                                                <td colspan="5" class="text-center">No forms found</td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
                             </div>
 
+                            <?php if ($totalPages > 1): ?>
+                                <div style="margin-top: 20px;">
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination">
+                                            <?php if ($page > 1): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=1" title="First page">&laquo;</a>
+                                                </li>
+                                            <?php endif; ?>
+
+                                            <?php
+                                            $start = max(1, min($page - 2, $totalPages - 4));
+                                            $end = min($totalPages, max(5, $page + 2));
+
+                                            for ($i = $start; $i <= $end; $i++):
+                                            ?>
+                                                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                                                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                                </li>
+                                            <?php endfor; ?>
+
+                                            <?php if ($page < $totalPages): ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=<?= $totalPages ?>" title="Last page">&raquo;</a>
+                                                </li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <?php if (isset($_SESSION['success_message'])): ?>
-                            <div class="alert alert-success position-fixed bottom-0 end-0 m-3" role="alert" style="z-index: 2000; width: auto;">
-                                <?php echo htmlspecialchars($_SESSION['success_message']); ?>
+                            <div class="alert alert-success" role="alert">
+                                <?= htmlspecialchars($_SESSION['success_message']) ?>
                                 <?php unset($_SESSION['success_message']); ?>
                             </div>
                         <?php endif; ?>
 
+                        <?php if (isset($_SESSION['alert_message'])): ?>
+                            <div class="alert alert-danger" role="alert">
+                                <?= htmlspecialchars($_SESSION['alert_message']) ?>
+                                <?php unset($_SESSION['alert_message']); ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                    <!-- / Content -->
-
-                    <!-- Footer -->
-                    <?php include('assets/inc/incFooter.php'); ?>
-                    <!-- / Footer -->
+                    <?php require_once 'assets/inc/incFooter.php'; ?>
                 </div>
                 <!-- / Content wrapper -->
             </div>

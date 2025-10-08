@@ -18,12 +18,12 @@ if ($form_id <= 0 || ($publish_status !== 0 && $publish_status !== 1)) {
 }
 
 // Update publish status
-$stmt = $conn->prepare("UPDATE forms SET published = :status WHERE id = :id");
+$stmt = $conn->prepare("UPDATE forms_combined SET published = :status WHERE id = :id");
 $stmt->execute([':status' => $publish_status, ':id' => $form_id]);
 
 
 // Fetch form title for display
-$stmt = $conn->prepare("SELECT * FROM forms WHERE id = :id");
+$stmt = $conn->prepare("SELECT * FROM forms_combined WHERE id = :id");
 $stmt->execute([':id' => $form_id]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$form) {
@@ -47,11 +47,45 @@ if ($created_for !== null) {
 }
 
 // Sanitize business name consistently with save_form.php
+
+// Sanitize and lowercase business name consistently with save_form.php
 $sanitized_business_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $business_name);
 $sanitized_business_name = str_replace(' ', '_', $sanitized_business_name);
+$sanitized_business_name = strtolower($sanitized_business_name);
 
 $formFileName = "feedback-form-{$form_id}.php";
-$formLink = $baseUrl . "/feedback-system/forms/" . ($sanitized_business_name ? $sanitized_business_name . '/' : '') . $formFileName;
+$formFolder = $sanitized_business_name;
+
+// If the sanitized business name is empty or '123456', try to find the actual folder
+// This handles cases where created_for might be null or business_name is not set
+if (empty($formFolder) || $formFolder === '123456') {
+    // Search for the form file within any subdirectory of 'forms/'
+    $formPathPattern =  "../forms/*/" . $formFileName;
+    $matches = glob($formPathPattern);
+
+    if (!empty($matches)) {
+        // Extract the folder name from the matched path
+        $parts = explode(DIRECTORY_SEPARATOR, $matches[0]);
+        // The folder name will be the second to last element before the filename
+        $formFolder = $parts[count($parts) - 2];
+    } else {
+        // Fallback: if not found in a business-specific folder, check directly in 'forms/'
+        $formPathPattern =  "../forms/" . $formFileName;
+        $matches = glob($formPathPattern);
+        if (!empty($matches)) {
+            $formFolder = ''; // Indicates it's directly in the forms folder
+        }
+    }
+}
+// Always use the actual created folder name in the link
+if (!empty($formFolder)) {
+    $formLink = $baseUrl . "/feedback-system/forms/" . $formFolder . '/' . $formFileName;
+} else if ($formFolder === '') {
+    // Case where form is directly in 'forms/' folder
+    $formLink = $baseUrl . "/feedback-system/forms/" . $formFileName;
+} else {
+    $formLink = ''; // Link remains empty if no folder is found
+}
 
 // Use Google Chart API for QR code
 $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . urlencode($formLink);
@@ -121,16 +155,16 @@ $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" . 
                         <div class="mb-3">
                             <?php if (isset($_SESSION['role_id'])): ?>
                                 <?php if ($_SESSION['role_id'] == 1): ?>
-                                    <a href="index.php" class="btn btn-dark mt-4">&larr; Back to Admin Dashboard</a>
+                                    <a href="forms_lists.php" class="btn btn-dark mt-4">&larr; Back to Admin Forms Lists </a>
                                 <?php elseif ($_SESSION['role_id'] == 2): ?>
-                                    <a href="moderator_dashboard.php" class="btn btn-dark mt-4">&larr; Back to Moderator Dashboard</a>
+                                    <a href="moderator_dashboard.php" class="btn btn-dark mt-4">&larr; Back to Moderator Forms Lists Dashboard</a>
                                 <?php elseif ($_SESSION['role_id'] == 3): ?>
                                     <a href="user_dashboard.php" class="btn btn-dark mt-4">&larr; Back to User Dashboard</a>
                                 <?php else: ?>
-                                    <a href="index.php" class="btn btn-dark mt-4">&larr; Back to Home</a>
+                                    <a href="forms_lists.php" class="btn btn-dark mt-4">&larr; Back to Forms Lists</a>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <a href="index.php" class="btn btn-dark mt-4">&larr; Back to Home</a>
+                                <a href="forms_lists.php" class="btn btn-dark mt-4">&larr; Back to Forms Lists</a>
                             <?php endif; ?>
                         </div>
 

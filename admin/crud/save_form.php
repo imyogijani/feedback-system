@@ -17,60 +17,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $number = isset($_POST['number']) ? 1 : 0;
     $created_by = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
     $form_type = $_POST['form_type'] ?? '';
-
-    $created_for = $_POST['created_for'] ?? null;
+    // var_dump($_POST['form_type']);
+    if ($_SESSION['role_id'] == 1 || $_SESSION['role_id'] == 2) {
+         $created_for = $_POST['created_for'] ?? null;
+    } else {
+       
+        $created_for = $_SESSION['user_id'] ?? null;
+    }
+    
+    // $created_for = $_POST['created_for'] ?? null;
     $company_name = $_POST['company_name'] ?? '';
     $company_logo = '';
+    $thankyou_message = $_POST['thankyou_message'] ?? '';
+    $allow_another_response = isset($_POST['allow_another_response']) ? 1 : 0;
+
+
+    
 
     if ($created_for === null || $created_for === '') {
-        // If no existing business is selected, create a new user entry
-        if (!empty($company_name)) {
-            // Handle company logo upload
-            if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
-                $logo_tmp_name = $_FILES['company_logo']['tmp_name'];
-                $logo_name = basename($_FILES['company_logo']['name']);
-                $upload_dir = '../../assets/images/'; // Adjust this path as needed
+        // If no existing business is selected, create a new user entry or use existing
+       if (!empty($company_name)) {
+        // Check if company already exists
+        $stmt = $conn->prepare("SELECT id FROM users WHERE username = ? LIMIT 1");
+        $stmt->execute([$company_name]);
+        $existingUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                $target_file = $upload_dir . $logo_name;
-
-                if (move_uploaded_file($logo_tmp_name, $target_file)) {
-                    $company_logo = $logo_name; // Save only the filename
-                } else {
-                    error_log("Failed to move uploaded file: " . $logo_tmp_name . " to " . $target_file);
-                }
-            }
-
-            $sanitized_company_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $company_name);
-            $sanitized_company_name = str_replace(' ', '_', $sanitized_company_name);
-            $sanitized_company_name = strtolower($sanitized_company_name);
-            $email = $sanitized_company_name . '@gmail.com';
-            // Insert new user (company) into the users table
-            $stmt = $conn->prepare("INSERT INTO users (username,password,business_name, profile_image, role_id,email) VALUES (?,?,'123456',?, ?, ?)");
-            // Assuming a default role_id for newly created companies, e.g., 4 for 'Company'
-            $stmt->execute([$company_name, $company_name, $company_logo, 3,$email]);
-            $created_for = $conn->lastInsertId(); // Get the ID of the newly created user
+        if ($existingUser) {
+            $created_for = $existingUser['id'];
         } else {
-            $created_for = 1; // Default to user ID 1 if no company name is provided
+            $sanitized_company_name = strtolower(str_replace(' ', '_', preg_replace('/[^a-zA-Z0-9_ ]/', '', $company_name)));
+            $email = $sanitized_company_name . '@gmail.com';
+
+            // Insert new user (company) into the users table without profile_image first
+            $stmt = $conn->prepare("INSERT INTO users (username, password, business_name, role_id, email) VALUES (?, '123456', ?, ?, ?)");
+            $stmt->execute([$company_name, $company_name, 3, $email]);
+            $created_for = $conn->lastInsertId();
         }
+
+        // Handle company logo upload for both new and existing users
+        if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
+                // Validate file type
+                $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
+                $ext = strtolower(pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION));
+                
+                if (!in_array($ext, $allowed_types)) {
+                    error_log("Invalid file type uploaded: " . $ext);
+                    throw new Exception("Invalid file type. Only JPG, JPEG, PNG and GIF are allowed.");
+                }
+                $safe_name = 'company_' . $created_for . '.' . $ext; // Use created_for ID for unique name
+                $upload_dir = '../assets/images';
+            $upload_dir = str_replace('\\', '/', $upload_dir);
+
+
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+            if (move_uploaded_file($_FILES['company_logo']['tmp_name'], $upload_dir . $safe_name)) {
+                $company_logo = $safe_name;
+                // Update the user record with the profile image
+                $update_stmt = $conn->prepare("UPDATE users SET profile_image = ? WHERE id = ?");
+                if (!$update_stmt->execute([$company_logo, $created_for])) {
+                    error_log("ERROR: Failed to update user profile_image for ID: " . $created_for . ". Error Info: " . json_encode($update_stmt->errorInfo()));
+                }
+            } else {
+                error_log("Logo upload failed: " . $_FILES['company_logo']['tmp_name'] . " to " . $upload_dir . $safe_name);
+            }
+        } else {
+            error_log("No company logo uploaded or an error occurred during upload. Error code: " . ($_FILES['company_logo']['error'] ?? 'N/A'));
+        }
+    } else {
+        $created_for = 1;
+    }
     }
 
-    $business_name = '';
-
-    if ($created_for !== 1) {
-        $stmt = $conn->prepare("SELECT business_name FROM users WHERE id = ?");
+    // Always use the selected or submitted company name for folder creation
+    if ($created_for !== null && $created_for !== '' && empty($company_name)) {
+        // If a business is selected (not new), fetch its business_name from DB
+        $stmt = $conn->prepare("SELECT business_namechoe FROM users WHERE id = ?");
         $stmt->execute([$created_for]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($user) {
-            $business_name = $user['business_name'];
-        } else {
-            $business_name = 'Aksharraj infotech';
-        }
+        $business_name = $user ? $user['business_name'] : '';
+    } else {
+        $business_name = $company_name;
     }
-
     // Sanitize business name consistently
     $sanitized_business_name = preg_replace('/[^a-zA-Z0-9_ -]/', '', $business_name);
     $sanitized_business_name = str_replace(' ', '_', $sanitized_business_name);
-    // $sanitized_business_name = strtolower($sanitized_business_name);
+    $sanitized_business_name = strtolower($sanitized_business_name);
 
     $formsBasePath = '../../forms/';
     $businessFormsPath = $formsBasePath . $sanitized_business_name . '/';
@@ -86,8 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->beginTransaction();
 
         // Insert form details
-        $stmt = $conn->prepare("INSERT INTO forms (title, description, form_type, created_by, created_for, firstname, lastname, email, number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $description, $form_type, $created_by, $created_for, $firstname, $lastname, $email, $number]);
+        $stmt = $conn->prepare("INSERT INTO forms_combined (title, description, form_type, created_by, created_for, firstname, lastname, email, number, questions_json, thankyou_message, allow_another_response) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $description, $form_type, $created_by, $created_for, $firstname, $lastname, $email, $number,$questions_json, $thankyou_message, $allow_another_response]);
         $form_id = $conn->lastInsertId();
         $_SESSION['form_id'] = $form_id; // Set formId from the generated ID
 
@@ -107,7 +140,8 @@ if (isset($conn)) {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 
-$formId = $_SESSION['form_id'];
+// Set formId to the actual form's ID (from forms_combined table), not from session
+$formId = {FORM_ID_PLACEHOLDER};
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -116,7 +150,7 @@ if ($formId <= 0) {
 }
 
 // Fetch form details
-$stmt = $conn->prepare("SELECT * FROM forms WHERE id = ?");
+$stmt = $conn->prepare("SELECT * FROM forms_combined WHERE id = ?");
 $stmt->execute([$formId]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC); // Fetch as associative array
 
@@ -134,11 +168,14 @@ if (!empty($form['created_for'])) {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-// Fetch questions associated with the form
-// Ordered by ID for consistent display order
-$stmt = $conn->prepare("SELECT * FROM questions WHERE form_id = ? ORDER BY id ASC");
-$stmt->execute([$formId]);
-$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch sectioned questions from questions_json
+$questions = [];
+if (!empty($form['questions_json'])) {
+    $questions = json_decode($form['questions_json'], true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($questions)) {
+        $questions = [];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -208,7 +245,7 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <h2 class="text-center title"><?= htmlspecialchars($form['title']) ?></h2>
         <p><?= htmlspecialchars($form['description']) ?></p>
-        <form method="POST" action="process_response.php">
+        <form method="POST" action="../process_response.php">
             <input type="hidden" name="form_id" value="<?= htmlspecialchars($formId) ?>">
 
             <?php if (!empty($form['firstname']) || !empty($form['lastname'])): ?>
@@ -250,68 +287,86 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             <?php endif; ?>
 
-            <?php foreach ($questions as $q): ?>
-                <div class="mb-3">
-                    <label class="form-label" style="font-weight: 500;">
-                        <?= htmlspecialchars($q['question_text']) ?>
-                    </label>
-                    <?php
-                    // Fetch options for the current question (if applicable)
-                    $stmt = $conn->prepare("SELECT * FROM options WHERE question_id = ? ORDER BY id ASC");
-                    $stmt->execute([$q['id']]);
-                    $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                    switch ($q['question_type']) {
-                        case 'text':
-                            echo '<input type="text" class="form-control" name="q_' . $q['id'] . '">';
-                            break;
-                        case 'textarea':
-                            echo '<textarea class="form-control" name="q_' . $q['id'] . '"></textarea>';
-                            break;
-                        case 'radio':
-                            foreach ($options as $opt) {
-                                echo '<div class="form-check">
-                                        <input class="form-check-input" type="radio" name="q_' . $q['id'] . '" value="' . htmlspecialchars($opt['option_text']) . '">
-                                        <label class="form-check-label">' . htmlspecialchars($opt['option_text']) . '</label>
-                                      </div>';
-                            }
-                            break;
-                        case 'checkbox':
-                            foreach ($options as $opt) {
-                                echo '<div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="q_' . $q['id'] . '[]" value="' . htmlspecialchars($opt['option_text']) . '">
-                                        <label class="form-check-label">' . htmlspecialchars($opt['option_text']) . '</label>
-                                      </div>';
-                            }
-                            break;
-                        case 'dropdown':
-                            echo '<select class="form-select" name="q_' . $q['id'] . '">';
-                            echo '<option value="">Select...</option>'; // Placeholder option
-                            foreach ($options as $opt) {
-                                echo '<option value="' . htmlspecialchars($opt['option_text']) . '">' . htmlspecialchars($opt['option_text']) . '</option>';
-                            }
-                            echo '</select>';
-                            break;
-                        case 'date':
-                            echo '<input type="date" class="form-control" name="q_' . $q['id'] . '">';
-                            break;
-                        case 'rating_star':
-                        case 'rating_heart':
-                        case 'rating_thumb':
-                            $icon = $q['question_type'] === 'rating_star' ? 'star' : ($q['question_type'] === 'rating_heart' ? 'heart' : 'hand-thumbs-up');
-                            echo '<div class="rating-icons" data-question-id="' . $q['id'] . '" data-icon="' . $icon . '">';
-                            for ($i = 1; $i <= 5; $i++) {
-                                echo '<i class="bi bi-' . $icon . '" data-value="' . $i . '" style="font-size: 1.5rem; cursor: pointer;"></i>';
-                            }
-                            echo '<input type="hidden" name="q_' . $q['id'] . '" value="0">'; // Hidden input for selected rating
-                            echo '</div>';
-                            break;
-                        default:
-                            echo '<input type="text" class="form-control" name="q_' . $q['id'] . '" placeholder="Unsupported question type">';
-                    }
-                    ?>
-                </div>
-            <?php endforeach; ?>
+            <?php if (!empty($questions)): ?>
+                <?php foreach ($questions as $section): ?>
+                    <div class="mb-4 p-3" style="background:#f6f6fa; border-radius:8px; border:1.5px solid #e0e0e0;">
+                        <div style="font-weight:bold; color:#673ab7; font-size:1.1rem; margin-bottom:10px;">
+                            <?= htmlspecialchars($section['section_title'] ?? '') ?>
+                        </div>
+                        <?php if (!empty($section['questions']) && is_array($section['questions'])): ?>
+                            <?php foreach ($section['questions'] as $qidx => $q): ?>
+                                <div class="mb-3">
+                                    <label class="form-label" style="font-weight: 500;">
+                                        <?= htmlspecialchars($q['text'] ?? '') ?>
+                                    </label>
+                                    <?php
+                                    $qType = strtolower($q['type'] ?? 'text');
+                                    $opts = [];
+                                    if (isset($q['options']) && is_array($q['options'])) {
+                                        foreach ($q['options'] as $opt) {
+                                            if (is_string($opt)) {
+                                                $opts[] = $opt;
+                                            } elseif (is_array($opt) && isset($opt['label'])) {
+                                                $opts[] = $opt['label'];
+                                            }
+                                        }
+                                    }
+                                    $qName = 'q_' . $section['section_id'] . '_' . $qidx;
+                                    switch ($qType) {
+                                        case 'text':
+                                            echo '<input type="text" class="form-control" name="' . $qName . '">';
+                                            break;
+                                        case 'textarea':
+                                            echo '<textarea class="form-control" name="' . $qName . '"></textarea>';
+                                            break;
+                                        case 'radio':
+                                            foreach ($opts as $opt) {
+                                                echo '<div class="form-check">'
+                                                    . '<input class="form-check-input" type="radio" name="' . $qName . '" value="' . htmlspecialchars($opt) . '">' 
+                                                    . '<label class="form-check-label">' . htmlspecialchars($opt) . '</label>'
+                                                    . '</div>';
+                                            }
+                                            break;
+                                        case 'checkbox':
+                                            foreach ($opts as $opt) {
+                                                echo '<div class="form-check">'
+                                                    . '<input class="form-check-input" type="checkbox" name="' . $qName . '[]" value="' . htmlspecialchars($opt) . '">' 
+                                                    . '<label class="form-check-label">' . htmlspecialchars($opt) . '</label>'
+                                                    . '</div>';
+                                            }
+                                            break;
+                                        case 'dropdown':
+                                            echo '<select class="form-select" name="' . $qName . '">';
+                                            echo '<option value="">Select...</option>';
+                                            foreach ($opts as $opt) {
+                                                echo '<option value="' . htmlspecialchars($opt) . '">' . htmlspecialchars($opt) . '</option>';
+                                            }
+                                            echo '</select>';
+                                            break;
+                                        case 'date':
+                                            echo '<input type="date" class="form-control" name="' . $qName . '">';
+                                            break;
+                                        case 'rating_star':
+                                        case 'rating_heart':
+                                        case 'rating_thumb':
+                                            $icon = $qType === 'rating_star' ? 'star' : ($qType === 'rating_heart' ? 'heart' : 'hand-thumbs-up');
+                                            echo '<div class="rating-icons" data-question-id="' . $qName . '" data-icon="' . $icon . '">';
+                                            for ($i = 1; $i <= 5; $i++) {
+                                                echo '<i class="bi bi-' . $icon . '" data-value="' . $i . '" style="font-size: 1.5rem; cursor: pointer;"></i>';
+                                            }
+                                            echo '<input type="hidden" name="' . $qName . '" value="0">';
+                                            echo '</div>';
+                                            break;
+                                        default:
+                                            echo '<input type="text" class="form-control" name="' . $qName . '" placeholder="Unsupported question type">';
+                                    }
+                                    ?>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
             <div class="mb-3">
                 <button type="submit" class="btn btn-success">Save</button>
                 <button type="reset" class="btn btn-outline-secondary ms-2">Clear</button>
@@ -376,40 +431,131 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </html>
 EOD;
 
-        // Write the content to the file
-        if (file_put_contents($formFilePath, $formContent) === false) {
+        // Replace placeholder with actual form_id before writing to file
+        $formContentFinal = str_replace('{FORM_ID_PLACEHOLDER}', $form_id, $formContent);
+        if (file_put_contents($formFilePath, $formContentFinal) === false) {
             throw new Exception("Failed to write form file: " . $formFilePath);
         }
 
-        // Save questions and options to database
-        foreach ($questions as $index => $questionText) {
-            $questionText = trim($questionText);
-            if (empty($questionText)) continue;
-
-            $questionType = $types[$index] ?? null;
-
-            $stmt = $conn->prepare("INSERT INTO questions (form_id, question_text, question_type) VALUES (?, ?, ?)");
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed (Question): " . implode(' | ', $conn->errorInfo()));
+        // Save questions and options as JSON in the form row, grouped by section
+        $section_titles = $_POST['section_titles'] ?? [];
+        $questionsArr = [];
+        $section_questions_map = [];
+        // Build a map of section_id => array of questions indexes
+        if (isset($_POST['question_section_ids'])) {
+            // If frontend passes section ids for each question
+            $section_questions_map = [];
+            foreach ($_POST['question_section_ids'] as $qidx => $section_id) {
+                $section_id = intval($section_id);
+                if (!isset($section_questions_map[$section_id])) $section_questions_map[$section_id] = [];
+                $section_questions_map[$section_id][] = $qidx;
             }
-
-            $stmt->execute([$form_id, $questionText, $questionType]);
-            $questionId = $conn->lastInsertId();
-
-            if (in_array($questionType, ['checkbox', 'radio', 'dropdown'])) {
-                $questionNumber = $index + 1;
-                if (isset($options[$questionNumber])) {
-                    foreach ($options[$questionNumber] as $optionText) {
-                        $stmt = $conn->prepare("INSERT INTO options (question_id, option_text) VALUES (?, ?)");
-                        $stmt->execute([$questionId, $optionText]);
-                    }
+        } else {
+            // Fallback: assign questions sequentially (old logic)
+            $section_questions_map = [];
+            $qidx = 0;
+            $questions_per_section = ceil(count($questions) / max(1, count($section_titles)));
+            $current_section = 1;
+            foreach ($questions as $qidx => $qtext) {
+                if (!isset($section_questions_map[$current_section])) $section_questions_map[$current_section] = [];
+                $section_questions_map[$current_section][] = $qidx;
+                if (count($section_questions_map[$current_section]) >= $questions_per_section && $current_section < count($section_titles)) {
+                    $current_section++;
                 }
             }
         }
 
+        foreach ($section_titles as $sectionId => $sectionTitle) {
+            $sectionKey = $sectionId + 1;
+            $section = [
+                'section_id' => $sectionKey,
+                'section_title' => trim($sectionTitle),
+                'questions' => []
+            ];
+            if (!empty($section_questions_map[$sectionKey])) {
+                $qNumInSection = 1;
+                foreach ($section_questions_map[$sectionKey] as $questionIndex) {
+                    $questionText = trim($questions[$questionIndex]);
+                    if (empty($questionText)) continue;
+                    $questionType = $types[$questionIndex] ?? null;
+                    $question = [
+                        'text' => $questionText,
+                        'type' => $questionType
+                    ];
+                    $optionsArr = [];
+                    // Calculate the correct global index for this question (matches frontend order)
+                    $globalIndex = 0;
+                    $found = false;
+                    foreach ($section_titles as $secIdx => $secTitle) {
+                        $secKey = $secIdx + 1;
+                        if (!empty($section_questions_map[$secKey])) {
+                            foreach ($section_questions_map[$secKey] as $qIdxInSec) {
+                                if ($secKey == $sectionKey && $qIdxInSec == $questionIndex) {
+                                    $found = true;
+                                    break;
+                                }
+                                $globalIndex++;
+                            }
+                            if ($found) break;
+                        }
+                    }
+                    if (in_array($questionType, ['checkbox', 'radio', 'dropdown'])) {
+                        // Fix: Some browsers may not submit empty option fields, so check for both numeric and string keys
+                        $optArr = [];
+                        if (isset($options[$globalIndex])) {
+                            $optArr = is_array($options[$globalIndex]) ? $options[$globalIndex] : [];
+                        } else if (isset($options[(string)$globalIndex])) {
+                            $optArr = is_array($options[(string)$globalIndex]) ? $options[(string)$globalIndex] : [];
+                        }
+                        foreach ($optArr as $optionText) {
+                            $optionText = trim($optionText);
+                            if ($optionText === '') continue;
+                            $optionsArr[] = [ 'label' => $optionText ];
+                        }
+                        if ($questionType === 'radio') {
+                            $radioArr = [];
+                            if (isset($radio_options[$globalIndex])) {
+                                $radioArr = is_array($radio_options[$globalIndex]) ? $radio_options[$globalIndex] : [];
+                            } else if (isset($radio_options[(string)$globalIndex])) {
+                                $radioArr = is_array($radio_options[(string)$globalIndex]) ? $radio_options[(string)$globalIndex] : [];
+                            }
+                            foreach ($radioArr as $optionText) {
+                                $optionText = trim($optionText);
+                                if ($optionText === '') continue;
+                                $optionsArr[] = [ 'label' => $optionText ];
+                            }
+                        }
+                        $question['options'] = $optionsArr;
+                    } else {
+                        $question['options'] = [];
+                    }
+                    $section['questions'][] = $question;
+                    $qNumInSection++;
+                }
+            }
+            $questionsArr[] = $section;
+        }
+        echo '<pre>';
+        // var_dump($optionsArr); // Debugging line to check options
+                        // exit; // Uncomment this line to stop execution for debugging
+        // var_dump($questionsArr); // Debugging line to check options
+                        // exit;
+        $questionsJson = json_encode($questionsArr, JSON_UNESCAPED_UNICODE);
+        // Update the form row with questions_json
+        $stmt = $conn->prepare("UPDATE forms_combined SET questions_json = ?, thankyou_message = ? WHERE id = ?");
+        $stmt->execute([$questionsJson, $thankyou_message, $form_id]);
+
         $conn->commit();
         $_SESSION['success'] = "Feedback form created successfully.";
-        header("Location: ../index.php");
+        if ($_SESSION['role_id'] == 3 ) {
+         header("Location: ../user_dashboard.php"); 
+        } 
+        elseif ($_SESSION['role_id'] == 2) {
+            header("Location: ../moderator_dashboard.php"); 
+        }
+        else {
+            header("Location: ../forms_lists.php"); 
+        }
         exit;
     } catch (Exception $e) {
         if ($conn->inTransaction()) {

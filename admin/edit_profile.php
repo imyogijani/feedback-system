@@ -26,8 +26,11 @@ $error_message = '';
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // var_dump($_POST); // Debugging line to check POST data
+    $firstname = trim($_POST['firstname']);
+    $lastname = trim($_POST['lastname']);
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
+    $mobile = trim($_POST['mobile']);
     $image = $_FILES['profile_image'] ?? null;
 
     // Image upload handling
@@ -46,11 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Update user data
     if (empty($error_message)) {
         if ($uploadFileName) {
-            $stmt = $conn->prepare("UPDATE users SET username = ?, email = ?, profile_image = ? WHERE id = ?");
-            $stmt->execute([$name, $email, $uploadFileName, $user_id]);
+            $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, username = ?, email = ?, mobile = ?, profile_image = ? WHERE id = ?");
+            $stmt->execute([$firstname, $lastname, $name, $email, $mobile, $uploadFileName, $user_id]);
         } else {
-            $stmt = $conn->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
-            $stmt->execute([$name, $email, $user_id]);
+            $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, username = ?, email = ?, mobile = ? WHERE id = ?");
+            $stmt->execute([$firstname, $lastname, $name, $email, $mobile, $user_id]);
         }
 
         $success_message = "Profile updated successfully!";
@@ -58,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch current data
-$stmt = $conn->prepare("SELECT username, email, profile_image FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT first_name, last_name, username, email, mobile, profile_image FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 ?>
@@ -94,6 +97,16 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                             style="width: 100px; height: 100px; object-fit: cover;">
                     </div>
 
+                     <div class="mb-3">
+                        <label for="firstname" class="form-label">First Name</label>
+                        <input type="text" name="firstname" id="firstname" class="form-control" value="<?= htmlspecialchars($user['first_name'] ?? '') ?>">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="lastname" class="form-label">Last Name</label>
+                        <input type="text" name="lastname" id="lastname" class="form-control" value="<?= htmlspecialchars($user['last_name'] ?? '') ?>">
+                    </div>
+
                     <div class="mb-3">
                         <label for="name" class="form-label">Full Name</label>
                         <input type="text" name="name" id="name" class="form-control" required value="<?= htmlspecialchars($user['username']) ?>">
@@ -104,6 +117,10 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                         <input type="email" name="email" id="email" class="form-control" required value="<?= htmlspecialchars($user['email']) ?>">
                     </div>
 
+                     <div class="mb-3">
+                        <label for="mobile" class="form-label">Mobile Number</label>
+                        <input type="text" name="mobile" id="mobile" class="form-control" value="<?= htmlspecialchars($user['mobile'] ?? '') ?>">
+                    </div>
                     <div class="mb-3">
                         <label for="profile_image" class="form-label">Profile Picture</label>
                         <input type="file" name="profile_image" id="profile_image" class="form-control">
@@ -111,7 +128,7 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <a href="profile.php" class="btn btn-secondary">Back</a>
+                        <a href="index.php" class="btn btn-secondary">Back</a>
                         <button type="submit" class="btn btn-primary">Update Profile</button>
                     </div>
                 </form>

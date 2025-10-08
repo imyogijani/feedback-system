@@ -7,7 +7,8 @@ if (isset($conn)) {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 
-$formId = $_SESSION['form_id'];
+// Set formId to the actual form's ID (from forms_combined table), not from session
+$formId = 57;
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -16,7 +17,7 @@ if ($formId <= 0) {
 }
 
 // Fetch form details
-$stmt = $conn->prepare("SELECT * FROM forms WHERE id = ?");
+$stmt = $conn->prepare("SELECT * FROM forms_combined WHERE id = ?");
 $stmt->execute([$formId]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC); // Fetch as associative array
 
@@ -34,11 +35,14 @@ if (!empty($form['created_for'])) {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-// Fetch questions associated with the form
-// Ordered by ID for consistent display order
-$stmt = $conn->prepare("SELECT * FROM questions WHERE form_id = ? ORDER BY id ASC");
-$stmt->execute([$formId]);
-$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch sectioned questions from questions_json
+$questions = [];
+if (!empty($form['questions_json'])) {
+    $questions = json_decode($form['questions_json'], true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($questions)) {
+        $questions = [];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -88,7 +92,7 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         $label = $user['business_name'] ?? '';
                         $imgPath = '';
                         if ($img && strpos($img, 'http') !== 0 && strpos($img, '/') !== 0) {
-                            $imgPath = '../../admin/assets/images/' . $img;
+                            $imgPath = '../../admin/assets/imaaesges/' . $img;
                         } else {
                             $imgPath = $img;
                         }
@@ -108,7 +112,7 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <h2 class="text-center title"><?= htmlspecialchars($form['title']) ?></h2>
         <p><?= htmlspecialchars($form['description']) ?></p>
-        <form method="POST" action="process_response.php">
+        <form method="POST" action="../process_response.php">
             <input type="hidden" name="form_id" value="<?= htmlspecialchars($formId) ?>">
 
             <?php if (!empty($form['firstname']) || !empty($form['lastname'])): ?>
@@ -150,68 +154,86 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             <?php endif; ?>
 
-            <?php foreach ($questions as $q): ?>
-                <div class="mb-3">
-                    <label class="form-label" style="font-weight: 500;">
-                        <?= htmlspecialchars($q['question_text']) ?>
-                    </label>
-                    <?php
-                    // Fetch options for the current question (if applicable)
-                    $stmt = $conn->prepare("SELECT * FROM options WHERE question_id = ? ORDER BY id ASC");
-                    $stmt->execute([$q['id']]);
-                    $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                    switch ($q['question_type']) {
-                        case 'text':
-                            echo '<input type="text" class="form-control" name="q_' . $q['id'] . '">';
-                            break;
-                        case 'textarea':
-                            echo '<textarea class="form-control" name="q_' . $q['id'] . '"></textarea>';
-                            break;
-                        case 'radio':
-                            foreach ($options as $opt) {
-                                echo '<div class="form-check">
-                                        <input class="form-check-input" type="radio" name="q_' . $q['id'] . '" value="' . htmlspecialchars($opt['option_text']) . '">
-                                        <label class="form-check-label">' . htmlspecialchars($opt['option_text']) . '</label>
-                                      </div>';
-                            }
-                            break;
-                        case 'checkbox':
-                            foreach ($options as $opt) {
-                                echo '<div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="q_' . $q['id'] . '[]" value="' . htmlspecialchars($opt['option_text']) . '">
-                                        <label class="form-check-label">' . htmlspecialchars($opt['option_text']) . '</label>
-                                      </div>';
-                            }
-                            break;
-                        case 'dropdown':
-                            echo '<select class="form-select" name="q_' . $q['id'] . '">';
-                            echo '<option value="">Select...</option>'; // Placeholder option
-                            foreach ($options as $opt) {
-                                echo '<option value="' . htmlspecialchars($opt['option_text']) . '">' . htmlspecialchars($opt['option_text']) . '</option>';
-                            }
-                            echo '</select>';
-                            break;
-                        case 'date':
-                            echo '<input type="date" class="form-control" name="q_' . $q['id'] . '">';
-                            break;
-                        case 'rating_star':
-                        case 'rating_heart':
-                        case 'rating_thumb':
-                            $icon = $q['question_type'] === 'rating_star' ? 'star' : ($q['question_type'] === 'rating_heart' ? 'heart' : 'hand-thumbs-up');
-                            echo '<div class="rating-icons" data-question-id="' . $q['id'] . '" data-icon="' . $icon . '">';
-                            for ($i = 1; $i <= 5; $i++) {
-                                echo '<i class="bi bi-' . $icon . '" data-value="' . $i . '" style="font-size: 1.5rem; cursor: pointer;"></i>';
-                            }
-                            echo '<input type="hidden" name="q_' . $q['id'] . '" value="0">'; // Hidden input for selected rating
-                            echo '</div>';
-                            break;
-                        default:
-                            echo '<input type="text" class="form-control" name="q_' . $q['id'] . '" placeholder="Unsupported question type">';
-                    }
-                    ?>
-                </div>
-            <?php endforeach; ?>
+            <?php if (!empty($questions)): ?>
+                <?php foreach ($questions as $section): ?>
+                    <div class="mb-4 p-3" style="background:#f6f6fa; border-radius:8px; border:1.5px solid #e0e0e0;">
+                        <div style="font-weight:bold; color:#673ab7; font-size:1.1rem; margin-bottom:10px;">
+                            <?= htmlspecialchars($section['section_title'] ?? '') ?>
+                        </div>
+                        <?php if (!empty($section['questions']) && is_array($section['questions'])): ?>
+                            <?php foreach ($section['questions'] as $qidx => $q): ?>
+                                <div class="mb-3">
+                                    <label class="form-label" style="font-weight: 500;">
+                                        <?= htmlspecialchars($q['text'] ?? '') ?>
+                                    </label>
+                                    <?php
+                                    $qType = strtolower($q['type'] ?? 'text');
+                                    $opts = [];
+                                    if (isset($q['options']) && is_array($q['options'])) {
+                                        foreach ($q['options'] as $opt) {
+                                            if (is_string($opt)) {
+                                                $opts[] = $opt;
+                                            } elseif (is_array($opt) && isset($opt['label'])) {
+                                                $opts[] = $opt['label'];
+                                            }
+                                        }
+                                    }
+                                    $qName = 'q_' . $section['section_id'] . '_' . $qidx;
+                                    switch ($qType) {
+                                        case 'text':
+                                            echo '<input type="text" class="form-control" name="' . $qName . '">';
+                                            break;
+                                        case 'textarea':
+                                            echo '<textarea class="form-control" name="' . $qName . '"></textarea>';
+                                            break;
+                                        case 'radio':
+                                            foreach ($opts as $opt) {
+                                                echo '<div class="form-check">'
+                                                    . '<input class="form-check-input" type="radio" name="' . $qName . '" value="' . htmlspecialchars($opt) . '">' 
+                                                    . '<label class="form-check-label">' . htmlspecialchars($opt) . '</label>'
+                                                    . '</div>';
+                                            }
+                                            break;
+                                        case 'checkbox':
+                                            foreach ($opts as $opt) {
+                                                echo '<div class="form-check">'
+                                                    . '<input class="form-check-input" type="checkbox" name="' . $qName . '[]" value="' . htmlspecialchars($opt) . '">' 
+                                                    . '<label class="form-check-label">' . htmlspecialchars($opt) . '</label>'
+                                                    . '</div>';
+                                            }
+                                            break;
+                                        case 'dropdown':
+                                            echo '<select class="form-select" name="' . $qName . '">';
+                                            echo '<option value="">Select...</option>';
+                                            foreach ($opts as $opt) {
+                                                echo '<option value="' . htmlspecialchars($opt) . '">' . htmlspecialchars($opt) . '</option>';
+                                            }
+                                            echo '</select>';
+                                            break;
+                                        case 'date':
+                                            echo '<input type="date" class="form-control" name="' . $qName . '">';
+                                            break;
+                                        case 'rating_star':
+                                        case 'rating_heart':
+                                        case 'rating_thumb':
+                                            $icon = $qType === 'rating_star' ? 'star' : ($qType === 'rating_heart' ? 'heart' : 'hand-thumbs-up');
+                                            echo '<div class="rating-icons" data-question-id="' . $qName . '" data-icon="' . $icon . '">';
+                                            for ($i = 1; $i <= 5; $i++) {
+                                                echo '<i class="bi bi-' . $icon . '" data-value="' . $i . '" style="font-size: 1.5rem; cursor: pointer;"></i>';
+                                            }
+                                            echo '<input type="hidden" name="' . $qName . '" value="0">';
+                                            echo '</div>';
+                                            break;
+                                        default:
+                                            echo '<input type="text" class="form-control" name="' . $qName . '" placeholder="Unsupported question type">';
+                                    }
+                                    ?>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
             <div class="mb-3">
                 <button type="submit" class="btn btn-success">Save</button>
                 <button type="reset" class="btn btn-outline-secondary ms-2">Clear</button>

@@ -17,29 +17,12 @@ if ($form_id <= 0) {
 $conn->beginTransaction();
 
 try {
-    $stmt = $conn->prepare("DELETE FROM form_responses WHERE form_id = ?");
-    $stmt->execute([$form_id]);
-    // Delete responses
-    $stmt = $conn->prepare("DELETE FROM responses WHERE form_id = ?");
+    $stmt = $conn->prepare("DELETE FROM form_responses_combined WHERE form_id = ?");
     $stmt->execute([$form_id]);
 
-    // Get question IDs to delete related options
-    $qStmt = $conn->prepare("SELECT id FROM questions WHERE form_id = ?");
-    $qStmt->execute([$form_id]);
-    $questionIds = $qStmt->fetchAll(PDO::FETCH_COLUMN);
-
-    if (!empty($questionIds)) {
-        $inClause = implode(',', array_fill(0, count($questionIds), '?'));
-        $optStmt = $conn->prepare("DELETE FROM options WHERE question_id IN ($inClause)");
-        $optStmt->execute($questionIds);
-    }
-
-    // Delete questions
-    $stmt = $conn->prepare("DELETE FROM questions WHERE form_id = ?");
-    $stmt->execute([$form_id]);
 
     // Delete the form
-    $stmt = $conn->prepare("DELETE FROM forms WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM forms_combined WHERE id = ?");
     $stmt->execute([$form_id]);
 
     $conn->commit();
@@ -47,16 +30,16 @@ try {
     // Redirect after deletion based on role_id
     if (isset($_SESSION['role_id'])) {
         if ($_SESSION['role_id'] == 1) {
-            header("Location: index.php?deleted=1"); // Admin dashboard
+            header("Location: forms_lists.php?deleted=1"); // Admin dashboard
         } elseif ($_SESSION['role_id'] == 2) {
             header("Location: moderator_dashboard.php?deleted=1"); // Moderator dashboard
         } elseif ($_SESSION['role_id'] == 3) {
             header("Location: user_dashboard.php?deleted=1"); // User dashboard
         } else {
-            header("Location: index.php?deleted=1"); // Default fallback
+            header("Location: forms_lists.php?deleted=1"); // Default fallback
         }
     } else {
-        header("Location: index.php?deleted=1");
+        header("Location: forms_lists.php?deleted=1");
     }
     exit();
 } catch (Exception $e) {

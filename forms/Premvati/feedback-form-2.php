@@ -7,7 +7,11 @@ if (isset($conn)) {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 
+<<<<<<< HEAD:forms/123456/feedback-form-2.php
 $formId = $_SESSION['form_id'];
+=======
+$formId = $form_id; // Directly use the form_id
+>>>>>>> 1db23584d9fe3e739e36d558983562ad2367c72b:forms/Premvati/feedback-form-2.php
 
 // Basic validation for form ID
 if ($formId <= 0) {
@@ -108,7 +112,11 @@ $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <h2 class="text-center title"><?= htmlspecialchars($form['title']) ?></h2>
         <p><?= htmlspecialchars($form['description']) ?></p>
+<<<<<<< HEAD:forms/123456/feedback-form-2.php
         <form method="POST" action="process_response.php">
+=======
+        <form method="POST" action="../../admin/crud/process_response.php">
+>>>>>>> 1db23584d9fe3e739e36d558983562ad2367c72b:forms/Premvati/feedback-form-2.php
             <input type="hidden" name="form_id" value="<?= htmlspecialchars($formId) ?>">
 
             <?php if (!empty($form['firstname']) || !empty($form['lastname'])): ?>

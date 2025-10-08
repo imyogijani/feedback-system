@@ -4,13 +4,14 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-if (!isset($_SESSION['role_id']) || $_SESSION['role_id'] != 1) {
+if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [1, 2, 3])) {
     header("Location: login.php");
     exit();
 }
 
+
 include('config/config.php');
-include('assets/inc/incHeader.php'); // Assuming this includes necessary HTML header info
+include('assets/inc/incHeader.php');
 
 $form_id = isset($_GET['form_id']) ? intval($_GET['form_id']) : 0;
 if ($form_id <= 0) {
@@ -20,7 +21,7 @@ if ($form_id <= 0) {
 }
 
 // Fetch form title
-$stmt = $conn->prepare("SELECT title FROM forms WHERE id = :form_id");
+$stmt = $conn->prepare("SELECT title, questions_json FROM forms_combined WHERE id = :form_id");
 $stmt->execute([':form_id' => $form_id]);
 $form = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$form) {
@@ -29,149 +30,219 @@ if (!$form) {
     exit();
 }
 
-// Fetch all questions for the form (needed for table headers, even if unanswered)
-$qstmt = $conn->prepare("SELECT id, question_text FROM questions WHERE form_id = :form_id ORDER BY id ASC");
-$qstmt->execute([':form_id' => $form_id]);
-$questions = $qstmt->fetchAll(PDO::FETCH_ASSOC);
-
-// --- Consolidated Query to fetch all data ---
-// This query now correctly joins using form_responses.id and responses.form_response_id
-$stmt_all_data = $conn->prepare("
-    SELECT
-        fr.id AS response_id,
-        fr.firstname,
-        fr.lastname,
-        fr.email,
-        fr.number,
-        fr.submitted_at,
-        q.id AS question_id,
-        q.question_text,
-        r.answer
-    FROM
-        form_responses fr
-    JOIN
-        responses r ON fr.id = r.form_response_id -- CRUCIAL CHANGE: Linking via the new column
-    JOIN
-        questions q ON r.question_id = q.id AND q.form_id = fr.form_id
-    WHERE
-        fr.form_id = :form_id
-    ORDER BY
-        fr.submitted_at DESC, fr.id ASC, q.id ASC
-");
-$stmt_all_data->execute([':form_id' => $form_id]);
-$raw_responses_data = $stmt_all_data->fetchAll(PDO::FETCH_ASSOC);
-// --- End of Consolidated Query ---
-
-// Process raw data to group answers by submission
-$all_responses_display = [];
-foreach ($raw_responses_data as $row) {
-    $current_response_id = $row['response_id'];
-
-    if (!isset($all_responses_display[$current_response_id])) {
-        // Initialize the submission data if it's the first time we see this response_id
-        $all_responses_display[$current_response_id] = [
-            'id' => $row['response_id'],
-            'firstname' => $row['firstname'] ?? '-',
-            'lastname' => $row['lastname'] ?? '-',
-            'email' => $row['email'] ?? '-',
-            'number' => $row['number'] ?? '-',
-            'submitted_at' => $row['submitted_at'] ?? '-',
-            'Youtubes' => [] // Will store answers keyed by question_id
-        ];
+// Decode questions
+$questions = [];
+if (!empty($form['questions_json'])) {
+    $questions = json_decode($form['questions_json'], true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($questions)) {
+        $questions = [];
     }
-    // Add the question's answer to the current submission
-    $all_responses_display[$current_response_id]['Youtubes'][$row['question_id']] = $row['answer'];
 }
 
-// Convert associative array to indexed array for simpler iteration in HTML
-$all_responses_display = array_values($all_responses_display);
+// Build headers
+$headers = [];
+foreach ($questions as $section) {
+    $sectionTitle = $section['section_title'] ?? '';
+    foreach (($section['questions'] ?? []) as $q) {
+        $headers[] = [
+            'section_title' => $sectionTitle,
+            'question_text' => $q['text'] ?? ''
+        ];
+    }
+}
 
-// Sort the final display array (though the SQL ORDER BY helps, this ensures it)
-usort($all_responses_display, function($a, $b) {
-    return strtotime($b['submitted_at']) - strtotime($a['submitted_at']);
-});
+// Pagination
+$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$offset = ($page - 1) * $limit;
 
+// Search filters
+$conditions = "form_id = :form_id";
+$params = [':form_id' => $form_id];
+
+$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
+$search_number = isset($_GET['search_number']) ? trim($_GET['search_number']) : '';
+
+if ($search_name !== '') {
+    $conditions .= " AND (firstname LIKE :search_name OR lastname LIKE :search_name)";
+    $params[':search_name'] = '%' . $search_name . '%';
+}
+if ($search_number !== '') {
+    $conditions .= " AND number LIKE :search_number";
+    $params[':search_number'] = '%' . $search_number . '%';
+}
+
+// Count total
+$total_stmt = $conn->prepare("SELECT COUNT(*) FROM form_responses_combined WHERE $conditions");
+$total_stmt->execute($params);
+$total_responses = $total_stmt->fetchColumn();
+$total_pages = ceil($total_responses / $limit);
+
+// Fetch data
+$query = "SELECT * FROM form_responses_combined WHERE $conditions ORDER BY submitted_at DESC, id ASC LIMIT :limit OFFSET :offset";
+$stmt = $conn->prepare($query);
+foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v);
+}
+$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$responses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form Responses for <?= htmlspecialchars($form['title']) ?></title>
-    <link rel="stylesheet" href="path/to/your/styles.css">
-    </head>
+    <title>Responses: <?= htmlspecialchars($form['title']) ?></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table th, .table td { vertical-align: middle; }
+        .section-header { font-weight: bold; }
+    </style>
+</head>
 <body>
-<div class="layout-wrapper layout-content-navbar">
-    <div class="layout-container">
-        <div class="layout-page">
-            <div class="content-wrapper">
-                <div class="container-xxl flex-grow-1 container-p-y">
-                    <h2>Responses for: <?= htmlspecialchars($form['title']) ?></h2>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">Responses for: <?= htmlspecialchars($form['title']) ?></h2>
+        <a href="export_responses.php?form_id=<?= $form_id ?>&search_name=<?= urlencode($search_name) ?>&search_number=<?= urlencode($search_number) ?>" class="btn btn-success"><i class="bi bi-download"></i> Download CSV</a>
+    </div>
 
-                    <?php if (empty($all_responses_display)): ?>
-                        <div class="alert alert-info">No responses yet for this form.</div>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>First Name</th>
-                                    <th>Last Name</th>
-                                    <th>Email</th>
-                                    <th>Number</th>
-                                    <th>Submitted At</th>
-                                    <!-- <th>Response ID</th> -->
-                                    <?php foreach ($questions as $q): // Use the fetched questions for headers ?>
-                                        <th><?= htmlspecialchars($q['question_text']) ?></th>
-                                    <?php endforeach; ?>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php $i = 1; ?>
-                                <?php foreach ($all_responses_display as $data): ?>
-                                    <tr>
-                                        <td><?= $i ?></td>
-                                        <td><?= htmlspecialchars($data['firstname']) ?></td>
-                                        <td><?= htmlspecialchars($data['lastname']) ?></td>
-                                        <td><?= htmlspecialchars($data['email']) ?></td>
-                                        <td><?= htmlspecialchars($data['number']) ?></td>
-                                        <td>
-                                            <?php
-                                            // Format date as dd-mm-yy h:m
-                                            $dt = $data['submitted_at'];
-                                            if ($dt && strtotime($dt)) {
-                                                echo date('d-m-y h:i:s', strtotime($dt));
-                                            } else {
-                                                echo htmlspecialchars($dt);
-                                            }
-                                            ?>
-                                        </td>
-                                        <!-- <td><?= $data['id'] ?></td> -->
-                                        <?php foreach ($questions as $q): ?>
-                                            <td><?= htmlspecialchars($data['Youtubes'][$q['id']] ?? '-') ?></td>
-                                        <?php endforeach; ?>
-                                    </tr>
-                                    <?php $i++; endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
-
-                    <a href="index.php" class="btn btn-secondary mt-3">Back to Dashboard</a>
-                </div>
-                <?php include('assets/inc/incFooter.php'); // Assuming this includes your footer content ?>
+    <!-- Search Form -->
+    <form method="get" class="mb-4">
+        <input type="hidden" name="form_id" value="<?= $form_id ?>">
+        <input type="hidden" name="limit" value="<?= $limit ?>">
+        <div class="row g-2">
+            <div class="col-md-4">
+                <input type="text" name="search_name" class="form-control" placeholder="Search by Name" value="<?= htmlspecialchars($search_name) ?>">
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="search_number" class="form-control" placeholder="Search by Number" value="<?= htmlspecialchars($search_number) ?>">
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="form_responses.php?form_id=<?= $form_id ?>" class="btn btn-secondary">Reset</a>
             </div>
         </div>
-    </div>
-    <div class="layout-overlay layout-menu-toggle"></div>
+    </form>
+
+    <?php if (empty($responses)): ?>
+        <div class="alert alert-info mt-3">No responses found.</div>
+    <?php else: ?>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Number</th>
+                    <th>Submitted At</th>
+                    <?php
+                    foreach ($questions as $section) {
+                        $colspan = count($section['questions'] ?? []);
+                        if ($colspan > 0) {
+                            echo '<th colspan="' . $colspan . '">' . htmlspecialchars($section['section_title'] ?? 'General') . '</th>';
+                        }
+                    }
+                    ?>
+                </tr>
+                <tr>
+                    <?php for ($i = 0; $i < 5; $i++) echo '<th></th>'; ?>
+                    <?php foreach ($headers as $h): ?>
+                        <th><?= htmlspecialchars($h['question_text']) ?></th>
+                    <?php endforeach; ?>
+                </tr>
+                </thead>
+                <tbody>
+                <?php $i = 1 + $offset; foreach ($responses as $resp): ?>
+                    <?php
+                    $answers = [];
+                    if (!empty($resp['responses_json'])) {
+                        $json = json_decode($resp['responses_json'], true);
+                        if (is_array($json)) {
+                            foreach ($json as $section) {
+                                foreach ($section['answers'] ?? [] as $a) {
+                                    $answer_value = $a['answer'] ?? '-';
+                                    // Check if the answer is a JSON string (likely from checkboxes)
+                                    $decoded_answer = json_decode($answer_value, true);
+                                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_answer)) {
+                                        $answers[] = implode(', ', $decoded_answer);
+                                    } else {
+                                        $answers[] = $answer_value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ?>
+                    <tr>
+                        <td><?= $i++ ?></td>
+                        <td><?= htmlspecialchars($resp['firstname'] . ' ' . $resp['lastname']) ?></td>
+                        <td><?= htmlspecialchars($resp['email']) ?></td>
+                        <td><?= htmlspecialchars($resp['number']) ?></td>
+                        <td><?= htmlspecialchars(date('d-m-Y H:i', strtotime($resp['submitted_at']))) ?></td>
+                        <?php foreach ($answers as $ans): ?>
+                            <td><?= htmlspecialchars($ans) ?></td>
+                        <?php endforeach; ?>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination and Limit Selector -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="d-flex align-items-center">
+                <label for="limit-select" class="form-label mb-0">Items per page:</label>
+                <select id="limit-select" class="form-select form-select-sm" onchange="updateLimit(this.value)">
+                    <?php
+                    $limits = [5, 10, 25, 50, 100];
+                    foreach ($limits as $l) {
+                        $selected = ($limit == $l) ? 'selected' : '';
+                        echo '<option value="' . $l . '" ' . $selected . '>' . $l . '</option>';
+                    }
+                    ?>
+                </select>
+            </div>
+        <nav>
+                <ul class="pagination mb-0">
+                    <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="?form_id=<?= $form_id ?>&limit=<?= $limit ?>&page=<?= $page - 1 ?>&search_name=<?= urlencode($search_name) ?>&search_number=<?= urlencode($search_number) ?>">Previous</a>
+                    </li>
+                    <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+                        <li class="page-item <?= ($page == $p) ? 'active' : '' ?>">
+                            <a class="page-link" href="?form_id=<?= $form_id ?>&limit=<?= $limit ?>&page=<?= $p ?>&search_name=<?= urlencode($search_name) ?>&search_number=<?= urlencode($search_number) ?>"><?= $p ?></a>
+                        </li>
+                    <?php endfor; ?>
+                    <li class="page-item <?= ($page >= $total_pages) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="?form_id=<?= $form_id ?>&limit=<?= $limit ?>&page=<?= $page + 1 ?>&search_name=<?= urlencode($search_name) ?>&search_number=<?= urlencode($search_number) ?>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+
+            
+        </div>
+    <?php endif; ?>
+ <?php if ($_SESSION['role_id'] == 1) { ?>
+            <a href="forms_lists.php" class="btn btn-secondary mt-4">Back to Forms Lists </a>
+            <?php } ?>
+            <?php if ($_SESSION['role_id'] == 2) { ?>
+            <a href="moderator_dashboard.php" class="btn btn-secondary mt-4">Back to Moderator Dashboard</a>
+            <?php } ?>
+            <?php if ($_SESSION['role_id'] == 3) { ?>
+            <a href="user_dashboard.php" class="btn btn-secondary mt-4">Back to user Dashboard</a>
+            <?php } ?>
+    <!-- <a href="index.php" class="btn btn-secondary mt-4">Back to Dashboard</a> -->
 </div>
 
-<!-- incScripts.php not found, so this include is removed to prevent warnings. -->
 <script>
-    setTimeout(() => {
-        document.querySelectorAll('.alert').forEach(alert => alert.remove());
-    }, 5000);
+    function updateLimit(newLimit) {
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('limit', newLimit);
+        currentUrl.searchParams.set('page', 1); // Reset to first page when limit changes
+        window.location.href = currentUrl.toString();
+    }
 </script>
 </body>
 </html>

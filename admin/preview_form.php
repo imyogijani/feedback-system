@@ -4,7 +4,7 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-if (!isset($_SESSION['role_id']) || $_SESSION['role_id'] != 1) {
+if (!isset($_SESSION['role_id']) || !in_array($_SESSION['role_id'], [1, 2, 3])) {
     header("Location: login.php");
     exit();
 }
@@ -21,8 +21,8 @@ $form_id = intval($_GET['id']);
 
 // Fetch form + created_for user info (business_name, profile_image)
 $stmt = $conn->prepare("
-    SELECT f.*, u.business_name, u.business_type, u.profile_image
-    FROM forms f
+    SELECT f.*, u.business_name, u.business_type, u.profile_image,f.questions_json AS questions
+    FROM forms_combined f
     LEFT JOIN users u ON f.created_for = u.id
     WHERE f.id = :id
 ");
@@ -34,15 +34,14 @@ if (!$form) {
     exit();
 }
 
-// Fetch questions
-$stmt = $conn->prepare("
-    SELECT id, question_text, question_type
-    FROM questions
-    WHERE form_id = :form_id
-    ORDER BY id ASC
-");
-$stmt->execute([':form_id' => $form_id]);
-$questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Decode questions JSON (sectioned format) from forms_combined
+$questions = [];
+if (isset($form['questions']) && !empty($form['questions'])) {
+    $questions = json_decode($form['questions'], true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($questions)) {
+        $questions = [];
+    }
+}
 
 // Determine logo path
 $logoPath = (!empty($form['profile_image']) && file_exists("uploads/profile_images/" . $form['profile_image']))
@@ -152,66 +151,215 @@ $logoPath = (!empty($form['profile_image']) && file_exists("uploads/profile_imag
         <div class="preview-content">
             <?php
             if ($questions):
-                // Fetch all options for these questions in one query
-                $questionIds = array_column($questions, 'id');
-                $optionsByQ = [];
-                if (!empty($questionIds)) {
-                    $in = str_repeat('?,', count($questionIds) - 1) . '?';
-                    $optStmt = $conn->prepare("SELECT question_id, option_text FROM options WHERE question_id IN ($in) ORDER BY id ASC");
-                    $optStmt->execute($questionIds);
-                    while ($row = $optStmt->fetch(PDO::FETCH_ASSOC)) {
-                        $optionsByQ[$row['question_id']][] = $row['option_text'];
-                    }
-                }
-                foreach ($questions as $index => $q):
-            ?>
-                <div class="question">
-                    <div class="question-title"><?= ($index + 1) . '. ' . htmlspecialchars($q['question_text']) ?></div>
-                    <div>
-                        <?php
-                        $opts = isset($optionsByQ[$q['id']]) ? $optionsByQ[$q['id']] : [];
-                        if ($q['question_type'] === 'radio' || $q['question_type'] === 'multiple_choice') {
-                            if ($opts) {
-                                foreach ($opts as $opt) {
-                                    echo "<div class='option'><input type='radio'> " . htmlspecialchars($opt) . "</div>";
+                foreach ($questions as $section):
+                    $sectionTitle = isset($section['section_title']) ? $section['section_title'] : '';
+                    echo '<div class="section-outline" style="border:2px solid #b3b3b3; border-radius:10px; margin-bottom:28px; margin-top:28px; box-shadow:0 2px 12px rgba(0,0,0,0.06); background:#fafaff; padding:18px 18px 10px 18px;">';
+                    echo '<div style="margin-bottom:18px; font-weight:bold; font-size:18px; color:#673ab7; border-bottom:1.5px solid #e0e0e0; padding-bottom:6px; letter-spacing:0.5px;">' . htmlspecialchars($sectionTitle) . '</div>';
+                    if (!empty($section['questions']) && is_array($section['questions'])) {
+                        $sectionQSerial = 1;
+                        foreach ($section['questions'] as $q) {
+                            $qText = isset($q['text']) ? $q['text'] : (isset($q['question']) ? $q['question'] : (isset($q['question_text']) ? $q['question_text'] : ''));
+                            $qType = isset($q['type']) ? strtolower($q['type']) : (isset($q['question_type']) ? strtolower($q['question_type']) : 'text');
+                            // Robustly decode and flatten options (handles array of JSON strings, double-encoded, etc.)
+                            $opts = [];
+                            if (isset($q['options'])) {
+                                if (is_array($q['options'])) {
+                                    foreach ($q['options'] as $opt) {
+                                        if (is_string($opt)) {
+                                            $decoded = json_decode($opt, true);
+                                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                                // If option is a JSON array, merge its values
+                                                foreach ($decoded as $dopt) {
+                                                    if (is_string($dopt)) $opts[] = $dopt;
+                                                }
+                                            } else {
+                                                $opts[] = $opt;
+                                            }
+                                        } elseif (is_array($opt)) {
+                                            foreach ($opt as $dopt) {
+                                                if (is_string($dopt)) $opts[] = $dopt;
+                                            }
+                                        }
+                                    }
+                                } elseif (is_string($q['options'])) {
+                                    $decodedOpts = json_decode($q['options'], true);
+                                    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedOpts)) {
+                                        foreach ($decodedOpts as $dopt) {
+                                            if (is_string($dopt)) $opts[] = $dopt;
+                                        }
+                                    } else {
+                                        $opts[] = $q['options'];
+                                    }
                                 }
-                            } else {
-                                echo "<div class='option'><input type='radio'> Option 1</div>";
                             }
-                        } elseif ($q['question_type'] === 'checkbox') {
-                            if ($opts) {
-                                foreach ($opts as $opt) {
-                                    echo "<div class='option'><input type='checkbox'> " . htmlspecialchars($opt) . "</div>";
+                            // Generate a unique name for radio/checkbox groups per question (section + question index)
+                            $sectionIndex = isset($sectionQSerial) ? $sectionQSerial : 0;
+                            $questionHash = md5($sectionTitle . '|' . $qText . '|' . $sectionIndex);
+                    ?>
+                        <div class="question">
+                            <div class="question-title"><?= ($sectionQSerial++) . '. ' . htmlspecialchars($qText) ?></div>
+                            <div>
+                                <?php
+                                // Normalize question type for consistent handling
+                                switch ($qType) {
+                                    case 'textarea':
+                                        echo "<textarea placeholder='Your answer' style='width: 100%; padding: 8px; min-height: 80px;'></textarea>";
+                                        break;
+                                    case 'radio':
+                                    case 'multiple_choice':
+                                    case 'multiple choice':
+                                        if (!empty($opts)) {
+                                            $hasOption = false;
+                                            foreach ($opts as $optIdx => $opt) {
+                                                if (is_string($opt) && trim($opt) !== '') {
+                                                    // Use unique name per question for radio group
+                                                    $radioName = 'radio_' . $questionHash;
+                                                    $radioId = $radioName . '_' . $optIdx;
+                                                    echo "<div class='option'><input type='radio' name='" . htmlspecialchars($radioName) . "' id='" . htmlspecialchars($radioId) . "'> <label for='" . htmlspecialchars($radioId) . "'>" . htmlspecialchars($opt) . "</label></div>";
+                                                    $hasOption = true;
+                                                }
+                                            }
+                                            if (!$hasOption) {
+                                                $radioName = 'radio_' . $questionHash;
+                                                echo "<div class='option'><input type='radio' name='" . htmlspecialchars($radioName) . "'> No options available</div>";
+                                            }
+                                        } else {
+                                            $radioName = 'radio_' . $questionHash;
+                                            echo "<div class='option'><input type='radio' name='" . htmlspecialchars($radioName) . "'> No options available</div>";
+                                        }
+                                        break;
+                                    
+                                    case 'checkbox':
+                                    case 'checkboxes':
+                                        if (!empty($opts)) {
+                                            $hasOption = false;
+                                            foreach ($opts as $opt) {
+                                                if (is_string($opt) && trim($opt) !== '') {
+                                                    echo "<div class='option'><input type='checkbox' > " . htmlspecialchars($opt) . "</div>";
+                                                    $hasOption = true;
+                                                }
+                                            }
+                                            if (!$hasOption) {
+                                                echo "<div class='option'><input type='checkbox' > No options available</div>";
+                                            }
+                                        } else {
+                                            echo "<div class='option'><input type='checkbox' > No options available</div>";
+                                        }
+                                        break;
+                                    case 'dropdown':
+                                    case 'select':
+                                        echo "<select class='form-select' style='width: 100%; padding: 8px;' >";
+                                        echo "<option value=''>Select...</option>";
+                                        $hasOption = false;
+                                        if (!empty($opts)) {
+                                            foreach ($opts as $opt) {
+                                                if (is_string($opt) && trim($opt) !== '') {
+                                                    echo "<option>" . htmlspecialchars($opt) . "</option>";
+                                                    $hasOption = true;
+                                                }
+                                            }
+                                        }
+                                        if (!$hasOption) {
+                                            echo "<option>No options available</option>";
+                                        }
+                                        echo "</select>";
+                                        break;
+                                    case 'date':
+                                        echo "<input type='date' style='width: 100%; padding: 8px;' >";
+                                        break;
+                                    case 'rating_star':
+                                        // Interactive star rating (1-5) using Font Awesome
+                                        echo "<div class='rating-stars' data-question='{$questionHash}' style='display: flex; gap: 8px; align-items: center;'>";
+                                        echo "<input type='hidden' name='star_rating_{$questionHash}' id='star_rating_{$questionHash}' value='0'>";
+                                        for ($i = 1; $i <= 5; $i++) {
+                                            echo "<i class='fas fa-star fa-2x' style='color: #bdbdbd; cursor:pointer;' onclick=\"setStarRating('{$questionHash}', {$i})\" data-value='{$i}' id='star_{$questionHash}_{$i}'></i>";
+                                        }
+                                        echo "</div>";
+                                        break;
+                                    case 'rating_heart':
+                                        // Interactive heart rating (1-5) using Font Awesome
+                                        echo "<div class='rating-hearts' data-question='{$questionHash}' style='display: flex; gap: 8px; align-items: center;'>";
+                                        echo "<input type='hidden' name='heart_rating_{$questionHash}' id='heart_rating_{$questionHash}' value='0'>";
+                                        for ($i = 1; $i <= 5; $i++) {
+                                            echo "<i class='fas fa-heart fa-2x' style='color: #bdbdbd; cursor:pointer;' onclick=\"setHeartRating('{$questionHash}', {$i})\" data-value='{$i}' id='heart_{$questionHash}_{$i}'></i>";
+                                        }
+                                        echo "</div>";
+                                        break;
+                                    case 'rating_thumb':
+                                        // Interactive thumbs-up rating (1-5) using Font Awesome
+                                        echo "<div class='rating-thumbs' data-question='{$questionHash}' style='display: flex; gap: 8px; align-items: center;'>";
+                                        echo "<input type='hidden' name='thumb_rating_{$questionHash}' id='thumb_rating_{$questionHash}' value='0'>";
+                                        for ($i = 1; $i <= 5; $i++) {
+                                            echo "<i class='fas fa-thumbs-up fa-2x' style='color: #bdbdbd; cursor:pointer;' onclick=\"setThumbRating('{$questionHash}', {$i})\" data-value='{$i}' id='thumb_{$questionHash}_{$i}'></i>";
+                                        }
+                                        echo "</div>";
+                                        break;
+                                    default:
+                                        echo "<input type='text' placeholder='Your answer' style='width: 100%; padding: 8px;' >";
+                                        break;
                                 }
-                            } else {
-                                echo "<div class='option'><input type='checkbox'> Option 1</div>";
-                            }
-                        } elseif ($q['question_type'] === 'dropdown') {
-                            echo "<select class='form-select' style='width: 100%; padding: 8px;'>";
-                            echo "<option value=''>Select...</option>";
-                            if ($opts) {
-                                foreach ($opts as $opt) {
-                                    echo "<option>" . htmlspecialchars($opt) . "</option>";
-                                }
-                            } else {
-                                echo "<option>No options available</option>";
-                            }
-                            echo "</select>";
-                        } elseif ($q['question_type'] === 'date') {
-                            echo "<input type='date' style='width: 100%; padding: 8px;'>";
-                        } else {
-                            echo "<input type='text' placeholder='Your answer' style='width: 100%; padding: 8px;'>";
+                                ?>
+                            </div>
+                        </div>
+                    <?php 
                         }
-                        ?>
-                    </div>
-                </div>
-            <?php endforeach;
+                    }
+                    echo '</div>';
+                endforeach;
             else:
+                echo '<p>No questions available for this form.</p>';
+            endif;
             ?>
-                <p>No questions available for this form.</p>
-            <?php endif; ?>
-            <a href="index.php" class="btn">Back to Dashboard</a>
+            <?php if ($_SESSION['role_id'] == 1) { ?>
+            <a href="forms_lists.php" class="btn">Back to Forms Lists</a>
+            <?php } ?>
+            <?php if ($_SESSION['role_id'] == 2) { ?>
+            <a href="moderator_dashboard.php" class="btn">Back to Moderator Dashboard</a>
+            <?php } ?>
+            <?php if ($_SESSION['role_id'] == 3) { ?>
+            <a href="user_dashboard.php" class="btn">Back to user Dashboard</a>
+            <?php } ?>
         </div>
+         <footer style="text-align:center; color:#fff; font-size:13px; margin-top:30px; padding:18px 0 8px 0; background: linear-gradient(90deg, #673ab7 0%, #512da8 100%); border-radius:0 0 8px 8px;">
+        &copy; <?= date('Y') ?> Feedback System. All rights reserved.
+    </footer>
     </div>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script>
+    // Interactive thumbs-up rating logic
+    function setThumbRating(questionHash, value) {
+        for (let i = 1; i <= 5; i++) {
+            const icon = document.getElementById(`thumb_${questionHash}_${i}`);
+            if (icon) {
+                icon.style.color = (i <= value) ? '#43a047' : '#bdbdbd';
+            }
+        }
+        const hiddenInput = document.getElementById(`thumb_rating_${questionHash}`);
+        if (hiddenInput) hiddenInput.value = value;
+    }
+    // Interactive star rating logic
+    function setStarRating(questionHash, value) {
+        for (let i = 1; i <= 5; i++) {
+            const icon = document.getElementById(`star_${questionHash}_${i}`);
+            if (icon) {
+                icon.style.color = (i <= value) ? '#ffc107' : '#bdbdbd';
+            }
+        }
+        const hiddenInput = document.getElementById(`star_rating_${questionHash}`);
+        if (hiddenInput) hiddenInput.value = value;
+    }
+    // Interactive heart rating logic
+    function setHeartRating(questionHash, value) {
+        for (let i = 1; i <= 5; i++) {
+            const icon = document.getElementById(`heart_${questionHash}_${i}`);
+            if (icon) {
+                icon.style.color = (i <= value) ? '#e53935' : '#bdbdbd';
+            }
+        }
+        const hiddenInput = document.getElementById(`heart_rating_${questionHash}`);
+        if (hiddenInput) hiddenInput.value = value;
+    }
+    </script>
 </body>
 </html>
