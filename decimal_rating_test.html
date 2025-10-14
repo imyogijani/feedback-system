@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Decimal Rating System Test</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .rating i {
+        cursor: pointer;
+        color: #dee2e6;
+        margin: 0 5px;
+        transition: all 0.2s ease;
+        font-size: 1.5rem;
+      }
+      .rating i:hover {
+        color: #ffc107;
+        transform: scale(1.1);
+      }
+
+      /* Enhanced Star Rating with Half-Stars */
+      .star-wrapper,
+      .heart-wrapper,
+      .thumb-wrapper {
+        display: inline-block;
+        position: relative;
+        margin: 0 2px;
+      }
+
+      .star-wrapper .half-star,
+      .heart-wrapper .half-heart,
+      .thumb-wrapper .half-thumb {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 50%;
+        overflow: hidden;
+        z-index: 1;
+        color: #ccc;
+        transition: color 0.2s ease;
+        margin: 0;
+      }
+
+      .star-wrapper .full-star,
+      .heart-wrapper .full-heart,
+      .thumb-wrapper .full-thumb {
+        color: #ccc;
+        transition: color 0.2s ease;
+        z-index: 0;
+        margin: 0;
+      }
+
+      .star-wrapper:hover .half-star,
+      .star-wrapper:hover .full-star,
+      .heart-wrapper:hover .half-heart,
+      .heart-wrapper:hover .full-heart,
+      .thumb-wrapper:hover .half-thumb,
+      .thumb-wrapper:hover .full-thumb {
+        transform: scale(1.1);
+      }
+
+      /* Hover effects for better UX */
+      .star-wrapper:hover .half-star {
+        color: #ffc107 !important;
+      }
+
+      .heart-wrapper:hover .half-heart {
+        color: #dc3545 !important;
+      }
+
+      .thumb-wrapper:hover .half-thumb {
+        color: #28a745 !important;
+      }
+
+      .test-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem 0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      }
+
+      .current-rating {
+        background: #e9ecef;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="row">
+        <div class="col-12">
+          <h1 class="text-center mb-5">Decimal Rating System Test</h1>
+          <p class="text-center text-muted mb-5">
+            Test the enhanced rating system with half-increments (0.5, 1.0, 1.5,
+            etc.)
+          </p>
+
+          <!-- Star Rating Test -->
+          <div class="test-section">
+            <h3>Star Rating (Decimal Support)</h3>
+            <p>
+              Click on the left half of any star for a half-rating (e.g., 3.5),
+              or the right side for full rating (e.g., 4.0)
+            </p>
+            <div class="rating" id="rating-container-1">
+              <div class="star-wrapper" data-rating="1">
+                <i
+                  class="fas fa-star-half-alt fa-2x half-star"
+                  onclick="setRating(1, 0.5)"
+                  data-value="0.5"
+                ></i>
+                <i
+                  class="fas fa-star fa-2x full-star"
+                  onclick="setRating(1, 1)"
+                  data-value="1"
+                ></i>
+              </div>
+              <div class="star-wrapper" data-rating="2">
+                <i
+                  class="fas fa-star-half-alt fa-2x half-star"
+                  onclick="setRating(1, 1.5)"
+                  data-value="1.5"
+                ></i>
+                <i
+                  class="fas fa-star fa-2x full-star"
+                  onclick="setRating(1, 2)"
+                  data-value="2"
+                ></i>
+              </div>
+              <div class="star-wrapper" data-rating="3">
+                <i
+                  class="fas fa-star-half-alt fa-2x half-star"
+                  onclick="setRating(1, 2.5)"
+                  data-value="2.5"
+                ></i>
+                <i
+                  class="fas fa-star fa-2x full-star"
+                  onclick="setRating(1, 3)"
+                  data-value="3"
+                ></i>
+              </div>
+              <div class="star-wrapper" data-rating="4">
+                <i
+                  class="fas fa-star-half-alt fa-2x half-star"
+                  onclick="setRating(1, 3.5)"
+                  data-value="3.5"
+                ></i>
+                <i
+                  class="fas fa-star fa-2x full-star"
+                  onclick="setRating(1, 4)"
+                  data-value="4"
+                ></i>
+              </div>
+              <div class="star-wrapper" data-rating="5">
+                <i
+                  class="fas fa-star-half-alt fa-2x half-star"
+                  onclick="setRating(1, 4.5)"
+                  data-value="4.5"
+                ></i>
+                <i
+                  class="fas fa-star fa-2x full-star"
+                  onclick="setRating(1, 5)"
+                  data-value="5"
+                ></i>
+              </div>
+              <input type="hidden" name="rating[1]" id="rating1" value="0" />
+            </div>
+            <div class="current-rating">
+              Current Rating: <span id="rating-display-1">0</span> out of 5
+            </div>
+          </div>
+
+          <!-- Heart Rating Test -->
+          <div class="test-section">
+            <h3>Heart Rating (Decimal Support)</h3>
+            <p>
+              Heart ratings now support half-increments using broken heart icons
+              for half-ratings
+            </p>
+            <div class="rating" id="rating-container-2">
+              <div class="heart-wrapper" data-rating="1">
+                <i
+                  class="fas fa-heart-broken fa-2x half-heart"
+                  onclick="setRating(2, 0.5)"
+                  data-value="0.5"
+                ></i>
+                <i
+                  class="fas fa-heart fa-2x full-heart"
+                  onclick="setRating(2, 1)"
+                  data-value="1"
+                ></i>
+              </div>
+              <div class="heart-wrapper" data-rating="2">
+                <i
+                  class="fas fa-heart-broken fa-2x half-heart"
+                  onclick="setRating(2, 1.5)"
+                  data-value="1.5"
+                ></i>
+                <i
+                  class="fas fa-heart fa-2x full-heart"
+                  onclick="setRating(2, 2)"
+                  data-value="2"
+                ></i>
+              </div>
+              <div class="heart-wrapper" data-rating="3">
+                <i
+                  class="fas fa-heart-broken fa-2x half-heart"
+                  onclick="setRating(2, 2.5)"
+                  data-value="2.5"
+                ></i>
+                <i
+                  class="fas fa-heart fa-2x full-heart"
+                  onclick="setRating(2, 3)"
+                  data-value="3"
+                ></i>
+              </div>
+              <div class="heart-wrapper" data-rating="4">
+                <i
+                  class="fas fa-heart-broken fa-2x half-heart"
+                  onclick="setRating(2, 3.5)"
+                  data-value="3.5"
+                ></i>
+                <i
+                  class="fas fa-heart fa-2x full-heart"
+                  onclick="setRating(2, 4)"
+                  data-value="4"
+                ></i>
+              </div>
+              <div class="heart-wrapper" data-rating="5">
+                <i
+                  class="fas fa-heart-broken fa-2x half-heart"
+                  onclick="setRating(2, 4.5)"
+                  data-value="4.5"
+                ></i>
+                <i
+                  class="fas fa-heart fa-2x full-heart"
+                  onclick="setRating(2, 5)"
+                  data-value="5"
+                ></i>
+              </div>
+              <input type="hidden" name="rating[2]" id="rating2" value="0" />
+            </div>
+            <div class="current-rating">
+              Current Rating: <span id="rating-display-2">0</span> out of 5
+            </div>
+          </div>
+
+          <!-- Thumbs Rating Test -->
+          <div class="test-section">
+            <h3>Thumbs Rating (Decimal Support)</h3>
+            <p>
+              Thumbs ratings use thumbs-down for half-ratings and thumbs-up for
+              full ratings
+            </p>
+            <div class="rating" id="rating-container-3">
+              <div class="thumb-wrapper" data-rating="1">
+                <i
+                  class="fas fa-thumbs-down fa-2x half-thumb"
+                  onclick="setRating(3, 0.5)"
+                  data-value="0.5"
+                ></i>
+                <i
+                  class="fas fa-thumbs-up fa-2x full-thumb"
+                  onclick="setRating(3, 1)"
+                  data-value="1"
+                ></i>
+              </div>
+              <div class="thumb-wrapper" data-rating="2">
+                <i
+                  class="fas fa-thumbs-down fa-2x half-thumb"
+                  onclick="setRating(3, 1.5)"
+                  data-value="1.5"
+                ></i>
+                <i
+                  class="fas fa-thumbs-up fa-2x full-thumb"
+                  onclick="setRating(3, 2)"
+                  data-value="2"
+                ></i>
+              </div>
+              <div class="thumb-wrapper" data-rating="3">
+                <i
+                  class="fas fa-thumbs-down fa-2x half-thumb"
+                  onclick="setRating(3, 2.5)"
+                  data-value="2.5"
+                ></i>
+                <i
+                  class="fas fa-thumbs-up fa-2x full-thumb"
+                  onclick="setRating(3, 3)"
+                  data-value="3"
+                ></i>
+              </div>
+              <div class="thumb-wrapper" data-rating="4">
+                <i
+                  class="fas fa-thumbs-down fa-2x half-thumb"
+                  onclick="setRating(3, 3.5)"
+                  data-value="3.5"
+                ></i>
+                <i
+                  class="fas fa-thumbs-up fa-2x full-thumb"
+                  onclick="setRating(3, 4)"
+                  data-value="4"
+                ></i>
+              </div>
+              <div class="thumb-wrapper" data-rating="5">
+                <i
+                  class="fas fa-thumbs-down fa-2x half-thumb"
+                  onclick="setRating(3, 4.5)"
+                  data-value="4.5"
+                ></i>
+                <i
+                  class="fas fa-thumbs-up fa-2x full-thumb"
+                  onclick="setRating(3, 5)"
+                  data-value="5"
+                ></i>
+              </div>
+              <input type="hidden" name="rating[3]" id="rating3" value="0" />
+            </div>
+            <div class="current-rating">
+              Current Rating: <span id="rating-display-3">0</span> out of 5
+            </div>
+          </div>
+
+          <div class="text-center mt-5">
+            <div class="alert alert-info">
+              <h5>✨ Enhanced Features</h5>
+              <ul class="list-unstyled mb-0">
+                <li>✅ Half-star ratings (0.5, 1.5, 2.5, etc.)</li>
+                <li>✅ Visual feedback with proper highlighting</li>
+                <li>✅ Hover effects for better user experience</li>
+                <li>✅ Support for Stars, Hearts, and Thumbs</li>
+                <li>✅ Proper color coding for each rating type</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function setRating(questionNumber, value) {
+        // Set the hidden input value for the selected rating
+        const ratingInput = document.getElementById(`rating${questionNumber}`);
+        if (ratingInput) ratingInput.value = value;
+
+        // Update the display
+        const displayElement = document.getElementById(
+          `rating-display-${questionNumber}`
+        );
+        if (displayElement) displayElement.textContent = value;
+
+        // Find the rating container
+        let ratingContainer = document.getElementById(
+          `rating-container-${questionNumber}`
+        );
+        if (!ratingContainer) return;
+
+        // Reset all to default color
+        const allStars = ratingContainer.querySelectorAll('i');
+        allStars.forEach(star => {
+          star.style.color = '#ccc';
+        });
+
+        // Highlight based on the rating value
+        const starWrappers = ratingContainer.querySelectorAll('.star-wrapper');
+        const heartWrappers =
+          ratingContainer.querySelectorAll('.heart-wrapper');
+        const thumbWrappers =
+          ratingContainer.querySelectorAll('.thumb-wrapper');
+
+        // Handle star ratings
+        if (starWrappers.length > 0) {
+          for (let i = 0; i < starWrappers.length; i++) {
+            const starPosition = i + 1;
+            const halfStar = starWrappers[i].querySelector('.half-star');
+            const fullStar = starWrappers[i].querySelector('.full-star');
+
+            if (value >= starPosition) {
+              // Full star highlight
+              if (fullStar) fullStar.style.color = '#ffc107';
+              if (halfStar) halfStar.style.color = '#ffc107';
+            } else if (value >= starPosition - 0.5) {
+              // Half star highlight
+              if (halfStar) halfStar.style.color = '#ffc107';
+              if (fullStar) fullStar.style.color = '#ccc';
+            }
+          }
+        }
+
+        // Handle heart ratings
+        if (heartWrappers.length > 0) {
+          for (let i = 0; i < heartWrappers.length; i++) {
+            const heartPosition = i + 1;
+            const halfHeart = heartWrappers[i].querySelector('.half-heart');
+            const fullHeart = heartWrappers[i].querySelector('.full-heart');
+
+            if (value >= heartPosition) {
+              // Full heart highlight
+              if (fullHeart) fullHeart.style.color = '#dc3545';
+              if (halfHeart) halfHeart.style.color = '#dc3545';
+            } else if (value >= heartPosition - 0.5) {
+              // Half heart highlight
+              if (halfHeart) halfHeart.style.color = '#dc3545';
+              if (fullHeart) fullHeart.style.color = '#ccc';
+            }
+          }
+        }
+
+        // Handle thumb ratings
+        if (thumbWrappers.length > 0) {
+          for (let i = 0; i < thumbWrappers.length; i++) {
+            const thumbPosition = i + 1;
+            const halfThumb = thumbWrappers[i].querySelector('.half-thumb');
+            const fullThumb = thumbWrappers[i].querySelector('.full-thumb');
+
+            if (value >= thumbPosition) {
+              // Full thumb highlight
+              if (fullThumb) fullThumb.style.color = '#28a745';
+              if (halfThumb) halfThumb.style.color = '#28a745';
+            } else if (value >= thumbPosition - 0.5) {
+              // Half thumb highlight
+              if (halfThumb) halfThumb.style.color = '#28a745';
+              if (fullThumb) fullThumb.style.color = '#ccc';
+            }
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

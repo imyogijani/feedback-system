@@ -38,9 +38,11 @@
                                     </h2>
                                     <p class="text-muted mb-0">Design and customize your feedback form with multiple question types</p>
                                 </div>
-                                <div class="text-end d-flex align-items-center gap-3">
-                                    <button type="button" class="btn btn-outline-success btn-lg px-4 py-2" onclick="openTemplateModal()" title="Build form using pre-designed templates">
-                                        <i class="fas fa-layer-group me-2"></i>Form Build from Template
+                                <div class="text-end d-flex align-items-center gap-3 flex-wrap">
+                                    <button type="button" class="btn btn-outline-success btn-lg px-4 py-2 shadow-sm" onclick="openTemplateModal()" title="Build form using pre-designed templates">
+                                        <i class="fas fa-layer-group me-2"></i>
+                                        <span class="d-none d-md-inline">Form Build from Template</span>
+                                        <span class="d-md-none">Templates</span>
                                     </button>
                                     <span class="badge bg-light text-primary px-3 py-2">
                                         <i class="fas fa-magic me-1"></i>Form Builder
@@ -567,7 +569,7 @@
                                     </form>
                                 </div>
                             </div>
-                            
+
                             <!-- Template Modal -->
                             <div class="modal fade" id="templateModal" tabindex="-1" aria-labelledby="templateModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-xl">
@@ -587,7 +589,7 @@
                                                     <p class="text-muted">Select from our pre-designed templates to create professional feedback forms in seconds.</p>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="row g-4" id="templateContainer">
                                                 <!-- Customer Satisfaction Template -->
                                                 <div class="col-lg-4 col-md-6">
@@ -606,7 +608,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <!-- Product Feedback Template -->
                                                 <div class="col-lg-4 col-md-6">
                                                     <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('product_feedback')">
@@ -624,7 +626,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <!-- Event Feedback Template -->
                                                 <div class="col-lg-4 col-md-6">
                                                     <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('event_feedback')">
@@ -642,7 +644,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <!-- Employee Feedback Template -->
                                                 <div class="col-lg-4 col-md-6">
                                                     <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('employee_feedback')">
@@ -660,7 +662,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <!-- Service Quality Template -->
                                                 <div class="col-lg-4 col-md-6">
                                                     <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('service_quality')">
@@ -678,7 +680,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <!-- General Survey Template -->
                                                 <div class="col-lg-4 col-md-6">
                                                     <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('general_survey')">
@@ -709,7 +711,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                         </div>
                         <!-- / Content -->
  <?php require_once 'assets/inc/incFooter.php'; ?>
@@ -748,7 +750,491 @@
         <script async defer src="https://buttons.github.io/buttons.js"></script>
 
         <script>
+            let selectedTemplate = null;
             let questionCounter = 1; // Initialize to 1 to match the default question
+
+            // Template functionality
+            async function openTemplateModal() {
+                const modal = new bootstrap.Modal(document.getElementById('templateModal'));
+
+                // Show loading state
+                const templateGrid = document.getElementById('templateGrid');
+                templateGrid.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading templates...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading templates...</p>
+                    </div>
+                `;
+
+                modal.show();
+
+                // Load templates from database
+                await loadTemplatesForModal();
+            }
+
+            async function loadTemplatesForModal() {
+                try {
+                    const response = await fetch('template_manager.php?action=get_templates');
+                    const data = await response.json();
+
+                    if (data.success && data.templates.length > 0) {
+                        renderTemplateGrid(data.templates);
+                    } else {
+                        showNoTemplatesMessage();
+                    }
+                } catch (error) {
+                    console.error('Error loading templates:', error);
+                    showTemplateLoadError();
+                }
+            }
+
+            function renderTemplateGrid(templates) {
+                const templateGrid = document.getElementById('templateGrid');
+
+                templateGrid.innerHTML = templates.map(template => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card template-card h-100" onclick="selectTemplate('${template.template_key}', this)" style="cursor: pointer;">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-primary">${template.form_type}</span>
+                                    <small class="text-muted">${template.section_count || 0} sections, ${template.question_count || 0} questions</small>
+                                </div>
+                                <h6 class="card-title">${template.title}</h6>
+                                <p class="card-text text-muted small">${template.description || 'No description provided'}</p>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        Fields: ${template.user_fields ? template.user_fields.join(', ') : 'None'}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function showNoTemplatesMessage() {
+                const templateGrid = document.getElementById('templateGrid');
+                templateGrid.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Templates Available</h5>
+                        <p class="text-muted">Create templates in the Template Manager to use here.</p>
+                        <a href="template_management.php" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Manage Templates
+                        </a>
+                    </div>
+                `;
+
+                // Disable apply button
+                document.getElementById('applyTemplateBtn').disabled = true;
+            }
+
+            function showTemplateLoadError() {
+                const templateGrid = document.getElementById('templateGrid');
+                templateGrid.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <h6 class="text-muted">Failed to Load Templates</h6>
+                        <p class="text-muted small">Please try again or contact support if the problem persists.</p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadTemplatesForModal()">
+                            <i class="fas fa-redo me-1"></i>Retry
+                        </button>
+                    </div>
+                `;
+            }
+
+            function selectTemplate(templateKey, cardElement) {
+                // Remove selection from all cards
+                document.querySelectorAll('.template-card').forEach(card => {
+                    card.classList.remove('selected-template');
+                });
+
+                // Add selection to clicked card
+                cardElement.classList.add('selected-template');
+                selectedTemplate = templateKey;
+
+                // Enable apply button
+                document.getElementById('applyTemplateBtn').disabled = false;
+            }
+
+            async function applySelectedTemplate() {
+                if (!selectedTemplate) return;
+
+                // Clear existing form
+                clearForm();
+
+                // Load complete template data from database
+                try {
+                    const response = await fetch(`template_manager.php?action=get_template&key=${selectedTemplate}`);
+                    const data = await response.json();
+
+                    if (data.success && data.template) {
+                        applyTemplateToForm(data.template);
+
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('templateModal'));
+                        modal.hide();
+
+                        // Show success message
+                        showAlertMessage('success', `Template "${data.template.title}" applied successfully!`);
+                    } else {
+                        throw new Error(data.error || 'Template not found');
+                    }
+                } catch (error) {
+                    console.error('Error applying template:', error);
+                    showAlertMessage('error', 'Failed to apply template: ' + error.message);
+                }
+            }
+
+            function applyTemplateToForm(template) {
+
+                if (template) {
+                    // Set form basic info
+                    document.getElementById('form_type').value = template.form_type;
+                    document.querySelector('input[name="title"]').value = template.title;
+                    document.querySelector('textarea[name="description"]').value = template.description;
+
+                    // Set user info checkboxes
+                    template.user_fields.forEach(field => {
+                        const checkbox = document.getElementById(field);
+                        if (checkbox) checkbox.checked = true;
+                    });
+
+                    // Clear existing questions
+                    const questionsContainer = document.getElementById('questions');
+                    questionsContainer.innerHTML = '';
+
+                    // Add template questions
+                    questionCounter = 1;
+                    template.sections.forEach((section, sectionIndex) => {
+                        addTemplateSection(section, sectionIndex + 1);
+                    });
+
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('templateModal'));
+                    modal.hide();
+
+                    // Show success message
+                    showTemplateSuccessMessage(template.title);
+                }
+            }
+
+            function clearForm() {
+                // Reset form fields
+                document.getElementById('form_type').selectedIndex = 0;
+                document.querySelector('input[name="title"]').value = '';
+                document.querySelector('textarea[name="description"]').value = '';
+
+                // Uncheck all user info checkboxes
+                document.querySelectorAll('input[type="checkbox"][name$="name"], input[type="checkbox"][name="email"], input[type="checkbox"][name="number"]').forEach(cb => {
+                    cb.checked = false;
+                });
+            }
+
+            function addTemplateSection(sectionData, sectionNumber) {
+                const section = document.createElement('section');
+                section.classList.add('question-section', 'mb-4');
+                section.setAttribute('draggable', 'true');
+                section.ondragstart = dragSection;
+                section.ondragover = allowSectionDrop;
+                section.ondrop = dropSection;
+
+                let questionsHtml = '';
+                const currentSectionStartIndex = questionCounter;
+
+                // Generate all questions in the section
+                sectionData.questions.forEach((question, qIndex) => {
+                    const questionNumber = qIndex + 1;
+                    const globalQuestionIndex = currentSectionStartIndex + qIndex;
+                    let questionFieldsHtml = '';
+
+                    // Generate question-specific fields based on type
+                    if (['radio', 'checkbox', 'dropdown'].includes(question.type) && question.options) {
+                        let optionsHtml = '';
+                        question.options.forEach(option => {
+                            let iconHtml = '';
+                            if (question.type === 'radio') {
+                                iconHtml = `<span class="input-group-text"><input type="radio" disabled></span>`;
+                            } else if (question.type === 'checkbox') {
+                                iconHtml = `<span class="input-group-text"><input type="checkbox" disabled></span>`;
+                            } else if (question.type === 'dropdown') {
+                                iconHtml = `<span class="input-group-text"><i class="fas fa-caret-down"></i></span>`;
+                            }
+
+                            optionsHtml += `
+                                <div class="input-group mb-2">
+                                    ${iconHtml}
+                                    <input type="text" class="form-control" name="options[${globalQuestionIndex}][]" placeholder="Option text" value="${option}">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="removeOption(this)">Remove</button>
+                                </div>
+                            `;
+                        });
+
+                        questionFieldsHtml = `
+                            <div class="mt-3">
+                                <label class="form-label">Options</label>
+                                <div id="optionsContainer${globalQuestionIndex}">
+                                    ${optionsHtml}
+                                </div>
+                                <button type="button" class="btn btn-outline-primary" onclick="addOptionGlobal(${sectionNumber}, ${globalQuestionIndex})">Add Option</button>
+                            </div>
+                        `;
+                    } else if (question.type === 'date') {
+                        questionFieldsHtml = `
+                            <div class="mt-3">
+                                <label class="form-label">Date Picker</label>
+                                <input type="date" class="form-control" name="date_answer[${globalQuestionIndex}]" placeholder="Select date">
+                            </div>
+                        `;
+                    } else if (question.type === 'text') {
+                        questionFieldsHtml = `
+                            <div class="mt-3">
+                                <label class="form-label">Short Answer</label>
+                                <input type="text" class="form-control" name="text_answer[${globalQuestionIndex}]" placeholder="Short answer text">
+                            </div>
+                        `;
+                    } else if (question.type === 'textarea') {
+                        questionFieldsHtml = `
+                            <div class="mt-3">
+                                <label class="form-label">Paragraph</label>
+                                <textarea class="form-control" name="paragraph_answer[${globalQuestionIndex}]" rows="3" placeholder="Paragraph text"></textarea>
+                            </div>
+                        `;
+                    } else if (question.type === 'rating_star') {
+                        questionFieldsHtml = `
+                            <div class="mt-3">
+                                <label class="form-label">Rating (Stars)</label>
+                                <div class="rating" id="rating-container-${globalQuestionIndex}">
+                                    <div class="star-wrapper" data-rating="1">
+                                        <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${globalQuestionIndex}, 0.5)" data-value="0.5"></i>
+                                        <i class="fas fa-star fa-2x full-star" onclick="setRating(${globalQuestionIndex}, 1)" data-value="1"></i>
+                                    </div>
+                                    <div class="star-wrapper" data-rating="2">
+                                        <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${globalQuestionIndex}, 1.5)" data-value="1.5"></i>
+                                        <i class="fas fa-star fa-2x full-star" onclick="setRating(${globalQuestionIndex}, 2)" data-value="2"></i>
+                                    </div>
+                                    <div class="star-wrapper" data-rating="3">
+                                        <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${globalQuestionIndex}, 2.5)" data-value="2.5"></i>
+                                        <i class="fas fa-star fa-2x full-star" onclick="setRating(${globalQuestionIndex}, 3)" data-value="3"></i>
+                                    </div>
+                                    <div class="star-wrapper" data-rating="4">
+                                        <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${globalQuestionIndex}, 3.5)" data-value="3.5"></i>
+                                        <i class="fas fa-star fa-2x full-star" onclick="setRating(${globalQuestionIndex}, 4)" data-value="4"></i>
+                                    </div>
+                                    <div class="star-wrapper" data-rating="5">
+                                        <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${globalQuestionIndex}, 4.5)" data-value="4.5"></i>
+                                        <i class="fas fa-star fa-2x full-star" onclick="setRating(${globalQuestionIndex}, 5)" data-value="5"></i>
+                                    </div>
+                                    <input type="hidden" name="rating[${globalQuestionIndex}]" id="rating${globalQuestionIndex}" value="0">
+                                </div>
+                            </div>
+                        `;
+                    } else if (question.type === 'rating_heart') {
+                        questionFieldsHtml = `
+                            <div class="mt-3">
+                                <label class="form-label">Rating (Hearts)</label>
+                                <div class="rating" id="rating-container-${globalQuestionIndex}">
+                                    <div class="heart-wrapper" data-rating="1">
+                                        <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${globalQuestionIndex}, 0.5)" data-value="0.5"></i>
+                                        <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${globalQuestionIndex}, 1)" data-value="1"></i>
+                                    </div>
+                                    <div class="heart-wrapper" data-rating="2">
+                                        <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${globalQuestionIndex}, 1.5)" data-value="1.5"></i>
+                                        <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${globalQuestionIndex}, 2)" data-value="2"></i>
+                                    </div>
+                                    <div class="heart-wrapper" data-rating="3">
+                                        <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${globalQuestionIndex}, 2.5)" data-value="2.5"></i>
+                                        <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${globalQuestionIndex}, 3)" data-value="3"></i>
+                                    </div>
+                                    <div class="heart-wrapper" data-rating="4">
+                                        <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${globalQuestionIndex}, 3.5)" data-value="3.5"></i>
+                                        <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${globalQuestionIndex}, 4)" data-value="4"></i>
+                                    </div>
+                                    <div class="heart-wrapper" data-rating="5">
+                                        <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${globalQuestionIndex}, 4.5)" data-value="4.5"></i>
+                                        <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${globalQuestionIndex}, 5)" data-value="5"></i>
+                                    </div>
+                                    <input type="hidden" name="rating[${globalQuestionIndex}]" id="rating${globalQuestionIndex}" value="0">
+                                </div>
+                            </div>
+                        `;
+                    } else if (question.type === 'rating_thumb') {
+                        questionFieldsHtml = `
+                            <div class="mt-3">
+                                <label class="form-label">Rating (Thumbs)</label>
+                                <div class="rating">
+                                    <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${globalQuestionIndex}, 1)" data-value="1"></i>
+                                    <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${globalQuestionIndex}, 2)" data-value="2"></i>
+                                    <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${globalQuestionIndex}, 3)" data-value="3"></i>
+                                    <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${globalQuestionIndex}, 4)" data-value="4"></i>
+                                    <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${globalQuestionIndex}, 5)" data-value="5"></i>
+                                    <input type="hidden" name="rating[${globalQuestionIndex}]" id="rating${globalQuestionIndex}" value="0">
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    if (qIndex === 0) {
+                        // Main question
+                        questionsHtml += `
+                            <div class="question-block">
+                                <div class="row align-items-center mb-2">
+                                    <div class="col-10 col-md-10">
+                                        <label class="question-label">Question ${questionNumber}</label>
+                                    </div>
+                                    <div class="col-2 col-md-2 text-end">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-btn" onclick="removeQuestion(this)" title="Remove section"><i class="fas fa-times"></i></button>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input type="text" name="questions[]" class="form-control mt-2" placeholder="Question text" required data-section="${sectionNumber}" value="${question.text}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <select id="questionType${globalQuestionIndex}" name="types[]" class="form-select mt-2" onchange="updateQuestionFields(${globalQuestionIndex})" data-section="${sectionNumber}">
+                                            <option>Select Option</option>
+                                            <option value="text" ${question.type === 'text' ? 'selected' : ''}>Short Answer</option>
+                                            <option value="textarea" ${question.type === 'textarea' ? 'selected' : ''}>Paragraph</option>
+                                            <option value="radio" ${question.type === 'radio' ? 'selected' : ''}>Radio Button</option>
+                                            <option value="checkbox" ${question.type === 'checkbox' ? 'selected' : ''}>Checkbox</option>
+                                            <option value="dropdown" ${question.type === 'dropdown' ? 'selected' : ''}>Dropdown</option>
+                                            <option value="date" ${question.type === 'date' ? 'selected' : ''}>Date Picker</option>
+                                            <option value="rating_star" ${question.type === 'rating_star' ? 'selected' : ''}>Rating (Stars)</option>
+                                            <option value="rating_heart" ${question.type === 'rating_heart' ? 'selected' : ''}>Rating (Hearts)</option>
+                                            <option value="rating_thumb" ${question.type === 'rating_thumb' ? 'selected' : ''}>Rating (Thumbs)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="questionFields${globalQuestionIndex}">
+                                    ${questionFieldsHtml}
+                                </div>
+                                <div class="text-end mt-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addSubQuestion(this, ${sectionNumber}, this.closest('.question-section'))"><i class="fas fa-plus"></i> Add Question</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Sub question
+                        questionsHtml += `
+                            <div class="row align-items-center mb-2 sub-question-block">
+                                <div class="col-10 col-md-10">
+                                    <label class="question-label">Question ${questionNumber}</label>
+                                </div>
+                                <div class="col-2 col-md-2 text-end">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-btn" onclick="removeSubQuestion(this)" title="Remove question"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" name="questions[]" class="form-control mt-2" placeholder="Question text" required data-section="${sectionNumber}" value="${question.text}">
+                                </div>
+                                <div class="col-md-6">
+                                    <select name="types[]" class="form-select mt-2" onchange="updateQuestionFieldsForSub(this, ${globalQuestionIndex})" data-section="${sectionNumber}">
+                                        <option>Select Option</option>
+                                        <option value="text" ${question.type === 'text' ? 'selected' : ''}>Short Answer</option>
+                                        <option value="textarea" ${question.type === 'textarea' ? 'selected' : ''}>Paragraph</option>
+                                        <option value="radio" ${question.type === 'radio' ? 'selected' : ''}>Radio Button</option>
+                                        <option value="checkbox" ${question.type === 'checkbox' ? 'selected' : ''}>Checkbox</option>
+                                        <option value="dropdown" ${question.type === 'dropdown' ? 'selected' : ''}>Dropdown</option>
+                                        <option value="date" ${question.type === 'date' ? 'selected' : ''}>Date Picker</option>
+                                        <option value="rating_star" ${question.type === 'rating_star' ? 'selected' : ''}>Rating (Stars)</option>
+                                        <option value="rating_heart" ${question.type === 'rating_heart' ? 'selected' : ''}>Rating (Hearts)</option>
+                                        <option value="rating_thumb" ${question.type === 'rating_thumb' ? 'selected' : ''}>Rating (Thumbs)</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <div class="sub-question-fields mt-2" data-question-index="${globalQuestionIndex}">
+                                        ${questionFieldsHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                // Update question counter for next section
+                questionCounter += sectionData.questions.length;
+
+                section.innerHTML = `
+                    <div class="section-header custom-section-header d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <span class="section-badge me-2">${sectionNumber}</span>
+                            <input type="text" class="form-control fw-bold section-title-input" name="section_titles[]" value="${sectionData.title}" style="width: 200px;" placeholder="Add Section Name" />
+                        </div>
+                        <span class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>
+                    </div>
+                    ${questionsHtml}
+                `;
+
+                document.getElementById('questions').appendChild(section);
+            }
+
+            function showTemplateSuccessMessage(templateName) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Template Applied Successfully!</strong> The "${templateName}" template has been loaded into your form.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                const container = document.querySelector('.container-xxl');
+                const firstChild = container.firstElementChild;
+                container.insertBefore(alertDiv, firstChild.nextSibling);
+
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (alertDiv && alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 5000);
+            }
+
+            async function getTemplateData() {
+                try {
+                    const response = await fetch('template_manager.php?action=get_templates');
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Convert array format to object format for compatibility
+                        const templatesObject = {};
+                        data.templates.forEach(template => {
+                            templatesObject[template.template_key] = {
+                                title: template.title,
+                                description: template.description,
+                                form_type: template.form_type,
+                                user_fields: template.user_fields || []
+                            };
+                        });
+                        return templatesObject;
+                    } else {
+                        console.error('Failed to load templates:', data.error);
+                        return getFallbackTemplates();
+                    }
+                } catch (error) {
+                    console.error('Error fetching templates:', error);
+                    return getFallbackTemplates();
+                }
+            }
+
+            // Fallback templates in case database is not available
+            function getFallbackTemplates() {
+                return {
+                    customer_satisfaction: {
+                        title: "Customer Satisfaction Survey",
+                        description: "Help us improve our service by sharing your experience with us.",
+                        form_type: "Feedback",
+                        user_fields: ["firstname", "lastname", "email"]
+                    },
+                    product_feedback: {
+                        title: "Product Feedback Form",
+                        description: "Share your thoughts about our product to help us make it better.",
+                        form_type: "Feedback",
+                        user_fields: ["firstname", "email"]
+                    }
+                };
+            }
 
 
             function addSection() {
@@ -905,29 +1391,74 @@ function updateQuestionFieldsForSub(select, globalQuestionIndex) {
         fieldsDiv.innerHTML = `<div class="mt-2"><label class="form-label">Paragraph</label><textarea class="form-control" name="paragraph_answer[]" rows="3" placeholder="Paragraph text"></textarea></div>`;
     } else if (questionType === 'rating_star') {
         fieldsDiv.innerHTML = `<div class="mt-2"><label class="form-label">Rating (Stars)</label><div class="rating">
-            <i class="fas fa-star fa-2x" onclick="setSubRating(this, 1)" data-value="1"></i>
-            <i class="fas fa-star fa-2x" onclick="setSubRating(this, 2)" data-value="2"></i>
-            <i class="fas fa-star fa-2x" onclick="setSubRating(this, 3)" data-value="3"></i>
-            <i class="fas fa-star fa-2x" onclick="setSubRating(this, 4)" data-value="4"></i>
-            <i class="fas fa-star fa-2x" onclick="setSubRating(this, 5)" data-value="5"></i>
+            <div class="star-wrapper" data-rating="1">
+                <i class="fas fa-star-half-alt fa-2x half-star" onclick="setSubRating(this, 0.5)" data-value="0.5"></i>
+                <i class="fas fa-star fa-2x full-star" onclick="setSubRating(this, 1)" data-value="1"></i>
+            </div>
+            <div class="star-wrapper" data-rating="2">
+                <i class="fas fa-star-half-alt fa-2x half-star" onclick="setSubRating(this, 1.5)" data-value="1.5"></i>
+                <i class="fas fa-star fa-2x full-star" onclick="setSubRating(this, 2)" data-value="2"></i>
+            </div>
+            <div class="star-wrapper" data-rating="3">
+                <i class="fas fa-star-half-alt fa-2x half-star" onclick="setSubRating(this, 2.5)" data-value="2.5"></i>
+                <i class="fas fa-star fa-2x full-star" onclick="setSubRating(this, 3)" data-value="3"></i>
+            </div>
+            <div class="star-wrapper" data-rating="4">
+                <i class="fas fa-star-half-alt fa-2x half-star" onclick="setSubRating(this, 3.5)" data-value="3.5"></i>
+                <i class="fas fa-star fa-2x full-star" onclick="setSubRating(this, 4)" data-value="4"></i>
+            </div>
+            <div class="star-wrapper" data-rating="5">
+                <i class="fas fa-star-half-alt fa-2x half-star" onclick="setSubRating(this, 4.5)" data-value="4.5"></i>
+                <i class="fas fa-star fa-2x full-star" onclick="setSubRating(this, 5)" data-value="5"></i>
+            </div>
             <input type="hidden" name="rating[]" value="0">
         </div></div>`;
     } else if (questionType === 'rating_heart') {
         fieldsDiv.innerHTML = `<div class="mt-2"><label class="form-label">Rating (Hearts)</label><div class="rating">
-            <i class="fas fa-heart fa-2x" onclick="setSubRating(this, 1)" data-value="1"></i>
-            <i class="fas fa-heart fa-2x" onclick="setSubRating(this, 2)" data-value="2"></i>
-            <i class="fas fa-heart fa-2x" onclick="setSubRating(this, 3)" data-value="3"></i>
-            <i class="fas fa-heart fa-2x" onclick="setSubRating(this, 4)" data-value="4"></i>
-            <i class="fas fa-heart fa-2x" onclick="setSubRating(this, 5)" data-value="5"></i>
+            <div class="heart-wrapper" data-rating="1">
+                <i class="fas fa-heart-broken fa-2x half-heart" onclick="setSubRating(this, 0.5)" data-value="0.5"></i>
+                <i class="fas fa-heart fa-2x full-heart" onclick="setSubRating(this, 1)" data-value="1"></i>
+            </div>
+            <div class="heart-wrapper" data-rating="2">
+                <i class="fas fa-heart-broken fa-2x half-heart" onclick="setSubRating(this, 1.5)" data-value="1.5"></i>
+                <i class="fas fa-heart fa-2x full-heart" onclick="setSubRating(this, 2)" data-value="2"></i>
+            </div>
+            <div class="heart-wrapper" data-rating="3">
+                <i class="fas fa-heart-broken fa-2x half-heart" onclick="setSubRating(this, 2.5)" data-value="2.5"></i>
+                <i class="fas fa-heart fa-2x full-heart" onclick="setSubRating(this, 3)" data-value="3"></i>
+            </div>
+            <div class="heart-wrapper" data-rating="4">
+                <i class="fas fa-heart-broken fa-2x half-heart" onclick="setSubRating(this, 3.5)" data-value="3.5"></i>
+                <i class="fas fa-heart fa-2x full-heart" onclick="setSubRating(this, 4)" data-value="4"></i>
+            </div>
+            <div class="heart-wrapper" data-rating="5">
+                <i class="fas fa-heart-broken fa-2x half-heart" onclick="setSubRating(this, 4.5)" data-value="4.5"></i>
+                <i class="fas fa-heart fa-2x full-heart" onclick="setSubRating(this, 5)" data-value="5"></i>
+            </div>
             <input type="hidden" name="rating[]" value="0">
         </div></div>`;
     } else if (questionType === 'rating_thumb') {
         fieldsDiv.innerHTML = `<div class="mt-2"><label class="form-label">Rating (Thumbs)</label><div class="rating">
-            <i class="fas fa-thumbs-up fa-2x" onclick="setSubRating(this, 1)" data-value="1"></i>
-            <i class="fas fa-thumbs-up fa-2x" onclick="setSubRating(this, 2)" data-value="2"></i>
-            <i class="fas fa-thumbs-up fa-2x" onclick="setSubRating(this, 3)" data-value="3"></i>
-            <i class="fas fa-thumbs-up fa-2x" onclick="setSubRating(this, 4)" data-value="4"></i>
-            <i class="fas fa-thumbs-up fa-2x" onclick="setSubRating(this, 5)" data-value="5"></i>
+            <div class="thumb-wrapper" data-rating="1">
+                <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setSubRating(this, 0.5)" data-value="0.5"></i>
+                <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setSubRating(this, 1)" data-value="1"></i>
+            </div>
+            <div class="thumb-wrapper" data-rating="2">
+                <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setSubRating(this, 1.5)" data-value="1.5"></i>
+                <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setSubRating(this, 2)" data-value="2"></i>
+            </div>
+            <div class="thumb-wrapper" data-rating="3">
+                <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setSubRating(this, 2.5)" data-value="2.5"></i>
+                <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setSubRating(this, 3)" data-value="3"></i>
+            </div>
+            <div class="thumb-wrapper" data-rating="4">
+                <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setSubRating(this, 3.5)" data-value="3.5"></i>
+                <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setSubRating(this, 4)" data-value="4"></i>
+            </div>
+            <div class="thumb-wrapper" data-rating="5">
+                <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setSubRating(this, 4.5)" data-value="4.5"></i>
+                <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setSubRating(this, 5)" data-value="5"></i>
+            </div>
             <input type="hidden" name="rating[]" value="0">
         </div></div>`;
     }
@@ -937,15 +1468,85 @@ function updateQuestionFieldsForSub(select, globalQuestionIndex) {
 // Rating logic for sub-questions
 function setSubRating(icon, value) {
     const ratingDiv = icon.closest('.rating');
-    const icons = ratingDiv.getElementsByTagName('i');
-    for (let i = 0; i < icons.length; i++) {
-        icons[i].style.color = '#ccc';
-    }
-    for (let i = 0; i < icons.length; i++) {
-        if (i < value) {
-            icons[i].style.color = '#ffc107';
+
+    // Reset all stars to default color
+    const allStars = ratingDiv.querySelectorAll('i');
+    allStars.forEach(star => {
+        star.style.color = '#ccc';
+    });
+
+    // Check if this rating uses the new wrapper structure or old structure
+    const starWrappers = ratingDiv.querySelectorAll('.star-wrapper');
+    const heartWrappers = ratingDiv.querySelectorAll('.heart-wrapper');
+    const thumbWrappers = ratingDiv.querySelectorAll('.thumb-wrapper');
+
+    if (starWrappers.length > 0) {
+        // New structure with half-stars
+        for (let i = 0; i < starWrappers.length; i++) {
+            const starPosition = i + 1;
+            const halfStar = starWrappers[i].querySelector('.half-star');
+            const fullStar = starWrappers[i].querySelector('.full-star');
+
+            if (value >= starPosition) {
+                // Full star highlight
+                if (fullStar) fullStar.style.color = '#ffc107';
+                if (halfStar) halfStar.style.color = '#ffc107';
+            } else if (value >= starPosition - 0.5) {
+                // Half star highlight
+                if (halfStar) halfStar.style.color = '#ffc107';
+                if (fullStar) fullStar.style.color = '#ccc';
+            }
+        }
+    } else if (heartWrappers.length > 0) {
+        // New structure with half-hearts
+        for (let i = 0; i < heartWrappers.length; i++) {
+            const heartPosition = i + 1;
+            const halfHeart = heartWrappers[i].querySelector('.half-heart');
+            const fullHeart = heartWrappers[i].querySelector('.full-heart');
+
+            if (value >= heartPosition) {
+                // Full heart highlight
+                if (fullHeart) fullHeart.style.color = '#dc3545';
+                if (halfHeart) halfHeart.style.color = '#dc3545';
+            } else if (value >= heartPosition - 0.5) {
+                // Half heart highlight
+                if (halfHeart) halfHeart.style.color = '#dc3545';
+                if (fullHeart) fullHeart.style.color = '#ccc';
+            }
+        }
+    } else if (thumbWrappers.length > 0) {
+        // New structure with half-thumbs
+        for (let i = 0; i < thumbWrappers.length; i++) {
+            const thumbPosition = i + 1;
+            const halfThumb = thumbWrappers[i].querySelector('.half-thumb');
+            const fullThumb = thumbWrappers[i].querySelector('.full-thumb');
+
+            if (value >= thumbPosition) {
+                // Full thumb highlight
+                if (fullThumb) fullThumb.style.color = '#28a745';
+                if (halfThumb) halfThumb.style.color = '#28a745';
+            } else if (value >= thumbPosition - 0.5) {
+                // Half thumb highlight
+                if (halfThumb) halfThumb.style.color = '#28a745';
+                if (fullThumb) fullThumb.style.color = '#ccc';
+            }
+        }
+    } else {
+        // Old structure - fallback for existing ratings
+        const icons = ratingDiv.getElementsByTagName('i');
+        for (let i = 0; i < icons.length; i++) {
+            if (i < value) {
+                if (icons[i].classList.contains('fa-star')) {
+                    icons[i].style.color = '#ffc107';
+                } else if (icons[i].classList.contains('fa-heart')) {
+                    icons[i].style.color = '#dc3545';
+                } else if (icons[i].classList.contains('fa-thumbs-up')) {
+                    icons[i].style.color = '#28a745';
+                }
+            }
         }
     }
+
     const input = ratingDiv.querySelector('input[type="hidden"][name="rating[]"]');
     if (input) input.value = value;
 }
@@ -1105,12 +1706,27 @@ function removeQuestion(element) {
                     questionFieldsDiv.innerHTML = `
                         <div class="mt-3">
                             <label class="form-label">Rating (Stars)</label>
-                            <div class="rating">
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
-                                <i class="fas fa-star fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
+                            <div class="rating" id="rating-container-${questionNumber}">
+                                <div class="star-wrapper" data-rating="1">
+                                    <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${questionNumber}, 0.5)" data-value="0.5"></i>
+                                    <i class="fas fa-star fa-2x full-star" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
+                                </div>
+                                <div class="star-wrapper" data-rating="2">
+                                    <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${questionNumber}, 1.5)" data-value="1.5"></i>
+                                    <i class="fas fa-star fa-2x full-star" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
+                                </div>
+                                <div class="star-wrapper" data-rating="3">
+                                    <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${questionNumber}, 2.5)" data-value="2.5"></i>
+                                    <i class="fas fa-star fa-2x full-star" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
+                                </div>
+                                <div class="star-wrapper" data-rating="4">
+                                    <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${questionNumber}, 3.5)" data-value="3.5"></i>
+                                    <i class="fas fa-star fa-2x full-star" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
+                                </div>
+                                <div class="star-wrapper" data-rating="5">
+                                    <i class="fas fa-star-half-alt fa-2x half-star" onclick="setRating(${questionNumber}, 4.5)" data-value="4.5"></i>
+                                    <i class="fas fa-star fa-2x full-star" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
+                                </div>
                                 <input type="hidden" name="rating[${questionNumber}]" id="rating${questionNumber}" value="0">
                             </div>
                         </div>
@@ -1119,12 +1735,27 @@ function removeQuestion(element) {
                     questionFieldsDiv.innerHTML = `
                         <div class="mt-3">
                             <label class="form-label">Rating (Hearts)</label>
-                            <div class="rating">
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
-                                <i class="fas fa-heart fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
+                            <div class="rating" id="rating-container-${questionNumber}">
+                                <div class="heart-wrapper" data-rating="1">
+                                    <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${questionNumber}, 0.5)" data-value="0.5"></i>
+                                    <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
+                                </div>
+                                <div class="heart-wrapper" data-rating="2">
+                                    <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${questionNumber}, 1.5)" data-value="1.5"></i>
+                                    <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
+                                </div>
+                                <div class="heart-wrapper" data-rating="3">
+                                    <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${questionNumber}, 2.5)" data-value="2.5"></i>
+                                    <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
+                                </div>
+                                <div class="heart-wrapper" data-rating="4">
+                                    <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${questionNumber}, 3.5)" data-value="3.5"></i>
+                                    <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
+                                </div>
+                                <div class="heart-wrapper" data-rating="5">
+                                    <i class="fas fa-heart-broken fa-2x half-heart" onclick="setRating(${questionNumber}, 4.5)" data-value="4.5"></i>
+                                    <i class="fas fa-heart fa-2x full-heart" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
+                                </div>
                                 <input type="hidden" name="rating[${questionNumber}]" id="rating${questionNumber}" value="0">
                             </div>
                         </div>
@@ -1133,12 +1764,27 @@ function removeQuestion(element) {
                     questionFieldsDiv.innerHTML = `
                         <div class="mt-3">
                             <label class="form-label">Rating (Thumbs)</label>
-                            <div class="rating">
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
-                                <i class="fas fa-thumbs-up fa-2x" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
+                            <div class="rating" id="rating-container-${questionNumber}">
+                                <div class="thumb-wrapper" data-rating="1">
+                                    <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setRating(${questionNumber}, 0.5)" data-value="0.5"></i>
+                                    <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setRating(${questionNumber}, 1)" data-value="1"></i>
+                                </div>
+                                <div class="thumb-wrapper" data-rating="2">
+                                    <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setRating(${questionNumber}, 1.5)" data-value="1.5"></i>
+                                    <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setRating(${questionNumber}, 2)" data-value="2"></i>
+                                </div>
+                                <div class="thumb-wrapper" data-rating="3">
+                                    <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setRating(${questionNumber}, 2.5)" data-value="2.5"></i>
+                                    <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setRating(${questionNumber}, 3)" data-value="3"></i>
+                                </div>
+                                <div class="thumb-wrapper" data-rating="4">
+                                    <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setRating(${questionNumber}, 3.5)" data-value="3.5"></i>
+                                    <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setRating(${questionNumber}, 4)" data-value="4"></i>
+                                </div>
+                                <div class="thumb-wrapper" data-rating="5">
+                                    <i class="fas fa-thumbs-down fa-2x half-thumb" onclick="setRating(${questionNumber}, 4.5)" data-value="4.5"></i>
+                                    <i class="fas fa-thumbs-up fa-2x full-thumb" onclick="setRating(${questionNumber}, 5)" data-value="5"></i>
+                                </div>
                                 <input type="hidden" name="rating[${questionNumber}]" id="rating${questionNumber}" value="0">
                             </div>
                         </div>
@@ -1147,37 +1793,89 @@ function removeQuestion(element) {
             }
 
             function setRating(questionNumber, value) {
-    // Set the hidden input value for the selected rating
-    const ratingInput = document.getElementById(`rating${questionNumber}`);
-    if (ratingInput) ratingInput.value = value;
-    // Find the correct rating container (main or sub-question)
-    let ratingDiv = null;
-    // Try main question fields first
-    const mainFields = document.getElementById(`questionFields${questionNumber}`);
-    if (mainFields && mainFields.querySelector('.rating')) {
-        ratingDiv = mainFields.querySelector('.rating');
-    } else {
-        // Try sub-question fields
-        const allSubRatings = document.querySelectorAll('.sub-question-fields .rating');
-        for (const div of allSubRatings) {
-            if (div.querySelector('input[type="hidden"][name="rating[]"]')) {
-                ratingDiv = div;
-                break;
-            }
-        }
-    }
-    if (!ratingDiv) return;
-    const icons = ratingDiv.getElementsByTagName('i');
-    // Reset all icons
-    for (let i = 0; i < icons.length; i++) {
-        icons[i].style.color = '#ccc';
-    }
-    // Highlight the correct icons from left to right
-    for (let i = 0; i < icons.length; i++) {
-        if (i < value) {
-            icons[i].style.color = '#ffc107';
-        }
-    }
+                // Set the hidden input value for the selected rating
+                const ratingInput = document.getElementById(`rating${questionNumber}`);
+                if (ratingInput) ratingInput.value = value;
+
+                // Find the rating container
+                let ratingContainer = document.getElementById(`rating-container-${questionNumber}`);
+                if (!ratingContainer) {
+                    // Try to find in main question fields
+                    const mainFields = document.getElementById(`questionFields${questionNumber}`);
+                    if (mainFields && mainFields.querySelector('.rating')) {
+                        ratingContainer = mainFields.querySelector('.rating');
+                    }
+                }
+
+                if (!ratingContainer) return;
+
+                // Reset all stars to default color
+                const allStars = ratingContainer.querySelectorAll('i');
+                allStars.forEach(star => {
+                    star.style.color = '#ccc';
+                });
+
+                // Highlight based on the rating value
+                const starWrappers = ratingContainer.querySelectorAll('.star-wrapper');
+                const heartWrappers = ratingContainer.querySelectorAll('.heart-wrapper');
+                const thumbWrappers = ratingContainer.querySelectorAll('.thumb-wrapper');
+
+                // Handle star ratings
+                if (starWrappers.length > 0) {
+                    for (let i = 0; i < starWrappers.length; i++) {
+                        const starPosition = i + 1;
+                        const halfStar = starWrappers[i].querySelector('.half-star');
+                        const fullStar = starWrappers[i].querySelector('.full-star');
+
+                        if (value >= starPosition) {
+                            // Full star highlight
+                            if (fullStar) fullStar.style.color = '#ffc107';
+                            if (halfStar) halfStar.style.color = '#ffc107';
+                        } else if (value >= starPosition - 0.5) {
+                            // Half star highlight
+                            if (halfStar) halfStar.style.color = '#ffc107';
+                            if (fullStar) fullStar.style.color = '#ccc';
+                        }
+                    }
+                }
+
+                // Handle heart ratings
+                if (heartWrappers.length > 0) {
+                    for (let i = 0; i < heartWrappers.length; i++) {
+                        const heartPosition = i + 1;
+                        const halfHeart = heartWrappers[i].querySelector('.half-heart');
+                        const fullHeart = heartWrappers[i].querySelector('.full-heart');
+
+                        if (value >= heartPosition) {
+                            // Full heart highlight
+                            if (fullHeart) fullHeart.style.color = '#dc3545';
+                            if (halfHeart) halfHeart.style.color = '#dc3545';
+                        } else if (value >= heartPosition - 0.5) {
+                            // Half heart highlight
+                            if (halfHeart) halfHeart.style.color = '#dc3545';
+                            if (fullHeart) fullHeart.style.color = '#ccc';
+                        }
+                    }
+                }
+
+                // Handle thumb ratings
+                if (thumbWrappers.length > 0) {
+                    for (let i = 0; i < thumbWrappers.length; i++) {
+                        const thumbPosition = i + 1;
+                        const halfThumb = thumbWrappers[i].querySelector('.half-thumb');
+                        const fullThumb = thumbWrappers[i].querySelector('.full-thumb');
+
+                        if (value >= thumbPosition) {
+                            // Full thumb highlight
+                            if (fullThumb) fullThumb.style.color = '#28a745';
+                            if (halfThumb) halfThumb.style.color = '#28a745';
+                        } else if (value >= thumbPosition - 0.5) {
+                            // Half thumb highlight
+                            if (halfThumb) halfThumb.style.color = '#28a745';
+                            if (fullThumb) fullThumb.style.color = '#ccc';
+                        }
+                    }
+                }
             }
 
 
@@ -1263,6 +1961,58 @@ function removeQuestion(element) {
             .rating i:hover {
                 color: #ffc107;
                 transform: scale(1.1);
+            }
+
+            /* Enhanced Star Rating with Half-Stars */
+            .star-wrapper, .heart-wrapper, .thumb-wrapper {
+                display: inline-block;
+                position: relative;
+                margin: 0 2px;
+            }
+
+            .star-wrapper .half-star,
+            .heart-wrapper .half-heart,
+            .thumb-wrapper .half-thumb {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 50%;
+                overflow: hidden;
+                z-index: 1;
+                color: #ccc;
+                transition: color 0.2s ease;
+                margin: 0;
+            }
+
+            .star-wrapper .full-star,
+            .heart-wrapper .full-heart,
+            .thumb-wrapper .full-thumb {
+                color: #ccc;
+                transition: color 0.2s ease;
+                z-index: 0;
+                margin: 0;
+            }
+
+            .star-wrapper:hover .half-star,
+            .star-wrapper:hover .full-star,
+            .heart-wrapper:hover .half-heart,
+            .heart-wrapper:hover .full-heart,
+            .thumb-wrapper:hover .half-thumb,
+            .thumb-wrapper:hover .full-thumb {
+                transform: scale(1.1);
+            }
+
+            /* Hover effects for better UX */
+            .star-wrapper:hover .half-star {
+                color: #ffc107 !important;
+            }
+
+            .heart-wrapper:hover .half-heart {
+                color: #dc3545 !important;
+            }
+
+            .thumb-wrapper:hover .half-thumb {
+                color: #28a745 !important;
             }
 
             /* Enhanced Question Section Styling */
@@ -1638,6 +2388,86 @@ function removeQuestion(element) {
 
             ::-webkit-scrollbar-thumb:hover {
                 background: linear-gradient(135deg, #0056b3, #004085);
+            }
+
+            /* Template Modal Styling */
+            .template-card {
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border: 2px solid transparent;
+            }
+
+            .template-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                border-color: #007bff;
+            }
+
+            .template-card.selected-template {
+                border-color: #28a745;
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(40,167,69,0.2);
+            }
+
+            .template-card.selected-template::after {
+                content: '✓';
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: #28a745;
+                color: white;
+                border-radius: 50%;
+                width: 25px;
+                height: 25px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 0.9rem;
+                box-shadow: 0 2px 8px rgba(40,167,69,0.3);
+            }
+
+            .template-features .badge {
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+
+            .modal-xl {
+                max-width: 1200px;
+            }
+
+            .bg-gradient-success {
+                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            }
+
+            .template-card .card-header i {
+                opacity: 0.9;
+            }
+
+            .template-card:hover .card-header i {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+
+            /* Template button styling */
+            .btn-outline-success {
+                border-width: 2px;
+                font-weight: 600;
+                transition: all 0.3s ease;
+            }
+
+            .btn-outline-success:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.2);
+            }
+
+            /* Modal animations */
+            .modal.fade .modal-dialog {
+                transition: transform 0.4s ease-out;
+            }
+
+            .modal.show .modal-dialog {
+                transform: scale(1);
             }
         </style>
     </body>
