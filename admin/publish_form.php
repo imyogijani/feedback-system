@@ -67,7 +67,12 @@ if (empty($formFolder) || $formFolder === '123456') {
         // Extract the folder name from the matched path
         $parts = explode(DIRECTORY_SEPARATOR, $matches[0]);
         // The folder name will be the second to last element before the filename
-        $formFolder = $parts[count($parts) - 2];
+        // Check if array has enough elements to avoid negative index
+        if (count($parts) >= 2) {
+            $formFolder = $parts[count($parts) - 2];
+        } else {
+            $formFolder = ''; // Fallback to empty if path structure is unexpected
+        }
     } else {
         // Fallback: if not found in a business-specific folder, check directly in 'forms/'
         $formPathPattern =  "../forms/" . $formFileName;

@@ -21,10 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($_SESSION['role_id'] == 1 || $_SESSION['role_id'] == 2) {
          $created_for = $_POST['created_for'] ?? null;
     } else {
-       
+
         $created_for = $_SESSION['user_id'] ?? null;
     }
-    
+
     // $created_for = $_POST['created_for'] ?? null;
     $company_name = $_POST['company_name'] ?? '';
     $company_logo = '';
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $allow_another_response = isset($_POST['allow_another_response']) ? 1 : 0;
 
 
-    
+
 
     if ($created_for === null || $created_for === '') {
         // If no existing business is selected, create a new user entry or use existing
@@ -46,36 +46,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $created_for = $existingUser['id'];
         } else {
             $sanitized_company_name = strtolower(str_replace(' ', '_', preg_replace('/[^a-zA-Z0-9_ ]/', '', $company_name)));
-            $email = $sanitized_company_name . '@gmail.com';
+            $user_email = $sanitized_company_name . '@gmail.com';
 
             // Insert new user (company) into the users table without profile_image first
-            $stmt = $conn->prepare("INSERT INTO users (username, password, business_name, role_id, email) VALUES (?, '123456', ?, ?, ?)");
-            $stmt->execute([$company_name, $company_name, 3, $email]);
+            $stmt = $conn->prepare("INSERT INTO users (username, email, password, role_id, business_name) VALUES (?, ?, '123456', ?, ?)");
+            $stmt->execute([$company_name, $user_email, 3, $company_name]);
             $created_for = $conn->lastInsertId();
         }
 
         // Handle company logo upload for both new and existing users
         if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
-            $ext = pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION);
-            $safe_name = 'company_' . $created_for . '.' . $ext; // Use created_for ID for unique name
-            $upload_dir = '../assets/images/';
+            $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
+            $ext = strtolower(pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION));
 
-
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            if (move_uploaded_file($_FILES['company_logo']['tmp_name'], $upload_dir . $safe_name)) {
-                $company_logo = $safe_name;
-                // Update the user record with the profile image
-                $update_stmt = $conn->prepare("UPDATE users SET profile_image = ? WHERE id = ?");
-                if (!$update_stmt->execute([$company_logo, $created_for])) {
-                    error_log("ERROR: Failed to update user profile_image for ID: " . $created_for . ". Error Info: " . json_encode($update_stmt->errorInfo()));
-                }
+            if (!in_array($ext, $allowed_types)) {
+                $_SESSION['error'] = "Invalid file type. Only JPG, JPEG, PNG, and GIF files are allowed.";
             } else {
-                error_log("Logo upload failed: " . $_FILES['company_logo']['tmp_name'] . " to " . $upload_dir . $safe_name);
+                $safe_name = 'company_' . $created_for . '.' . $ext; // Use created_for ID for unique name
+                $upload_dir = '../assets/images/';
+
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+
+                if (move_uploaded_file($_FILES['company_logo']['tmp_name'], $upload_dir . $safe_name)) {
+                    $company_logo = $safe_name;
+                    // Update the user record with the profile image
+                    $update_stmt = $conn->prepare("UPDATE users SET profile_image = ? WHERE id = ?");
+                    if (!$update_stmt->execute([$company_logo, $created_for])) {
+                        error_log("ERROR: Failed to update user profile_image for ID: " . $created_for . ". Error Info: " . json_encode($update_stmt->errorInfo()));
+                        $_SESSION['error'] = "Failed to save company logo information.";
+                    } else {
+                        $_SESSION['success'] = "Company logo uploaded successfully.";
+                    }
+                } else {
+                    error_log("Logo upload failed: " . $_FILES['company_logo']['tmp_name'] . " to " . $upload_dir . $safe_name);
+                    $_SESSION['error'] = "Failed to upload company logo. Please try again.";
+                }
             }
-        } else {
-            error_log("No company logo uploaded or an error occurred during upload. Error code: " . ($_FILES['company_logo']['error'] ?? 'N/A'));
+        } else if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] !== UPLOAD_ERR_NO_FILE) {
+            // Handle upload errors
+            $upload_errors = [
+                UPLOAD_ERR_INI_SIZE => 'File is too large (exceeds upload_max_filesize)',
+                UPLOAD_ERR_FORM_SIZE => 'File is too large (exceeds MAX_FILE_SIZE)',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'File upload stopped by extension'
+            ];
+            $error_message = $upload_errors[$_FILES['company_logo']['error']] ?? 'Unknown upload error';
+            $_SESSION['error'] = "Upload failed: " . $error_message;
+            error_log("Company logo upload error: " . $error_message . " (Code: " . $_FILES['company_logo']['error'] . ")");
         }
     } else {
         $created_for = 1;
@@ -314,7 +335,7 @@ if (!empty($form['questions_json'])) {
                                         case 'radio':
                                             foreach ($opts as $opt) {
                                                 echo '<div class="form-check">'
-                                                    . '<input class="form-check-input" type="radio" name="' . $qName . '" value="' . htmlspecialchars($opt) . '">' 
+                                                    . '<input class="form-check-input" type="radio" name="' . $qName . '" value="' . htmlspecialchars($opt) . '">'
                                                     . '<label class="form-check-label">' . htmlspecialchars($opt) . '</label>'
                                                     . '</div>';
                                             }
@@ -322,7 +343,7 @@ if (!empty($form['questions_json'])) {
                                         case 'checkbox':
                                             foreach ($opts as $opt) {
                                                 echo '<div class="form-check">'
-                                                    . '<input class="form-check-input" type="checkbox" name="' . $qName . '[]" value="' . htmlspecialchars($opt) . '">' 
+                                                    . '<input class="form-check-input" type="checkbox" name="' . $qName . '[]" value="' . htmlspecialchars($opt) . '">'
                                                     . '<label class="form-check-label">' . htmlspecialchars($opt) . '</label>'
                                                     . '</div>';
                                             }
@@ -540,13 +561,13 @@ EOD;
         $conn->commit();
         $_SESSION['success'] = "Feedback form created successfully.";
         if ($_SESSION['role_id'] == 3 ) {
-         header("Location: ../user_dashboard.php"); 
-        } 
+         header("Location: ../user_dashboard.php");
+        }
         elseif ($_SESSION['role_id'] == 2) {
-            header("Location: ../moderator_dashboard.php"); 
+            header("Location: ../moderator_dashboard.php");
         }
         else {
-            header("Location: ../forms_lists.php"); 
+            header("Location: ../forms_lists.php");
         }
         exit;
     } catch (Exception $e) {

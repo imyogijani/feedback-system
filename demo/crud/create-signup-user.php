@@ -35,15 +35,13 @@ try {
                 echo "<script>window.location.href = '../register.php';</script>";
                 exit();
             } else {
-                // Hash the password
-                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
+                // Store password as plain text
                 // Insert user into DB
                 $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (:username, :email, :password)");
                 $stmt->execute([
                     'username' => $username,
                     'email'    => $email,
-                    'password' => $hashedPassword
+                    'password' => $password // Plain text password
                 ]);
 
                 // Set success message in session

@@ -14,9 +14,9 @@ set_error_handler(function ($severity, $message, $file, $line) {
     return false;
 });
 
-$host = "192.168.1.109"; // Database host
-$username = "feedback_user"; // Database username
-$password = "feedback_user"; // Database password
+$host = "localhost"; // Database host
+$username = "root"; // Database username
+$password = "070803"; // Database password
 
 $conn = new PDO("mysql:host=$host;dbname=u334564157_feedback", $username, $password); // Create connection using PDO
 $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // Set error mode to exception

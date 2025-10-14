@@ -14,7 +14,7 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $password = $_POST['password']; // Store password as plain text
     $role_id = intval($_POST['role_id']);
     $business_name = trim($_POST['business_name']);
     $created_by = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;

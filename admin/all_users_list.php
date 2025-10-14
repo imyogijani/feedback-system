@@ -86,10 +86,10 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <?php foreach ($users as $index => $user): ?>
                                             <tr>
                                                 <td><?= $offset + $index + 1 ?></td>
-                                                <td><img src="<?= $user['profile_image'] ? 'assets/images/' . htmlspecialchars($user['profile_image']) : 'assets/img/default-avatar.png' ?>" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;"></td>
-                                                <td><?= htmlspecialchars($user['username']) ?></td>
-                                                <td><?= htmlspecialchars($user['email']) ?></td>
-                                                <td><?= htmlspecialchars($user['mobile']) ?></td>
+                                                <td><img src="<?= $user['profile_image'] ? 'assets/images/' . htmlspecialchars($user['profile_image'] ?? '') : 'assets/img/default-avatar.png' ?>" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;"></td>
+                                                <td><?= htmlspecialchars($user['username'] ?? '') ?></td>
+                                                <td><?= htmlspecialchars($user['email'] ?? '') ?></td>
+                                                <td><?= htmlspecialchars($user['mobile'] ?? '') ?></td>
                                                 <td><?= htmlspecialchars($user['role_name'] ?? 'N/A') ?></td>
                                                 <td><?= $user['is_active'] ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'; ?></td>
                                                 <td><?= date('Y-m-d H:i', strtotime($user['created_at'])) ?></td>

@@ -9,7 +9,7 @@ $stmt = $conn->query("SELECT COUNT(*) AS active_users FROM users WHERE is_active
 $activeUsers = $stmt->fetch(PDO::FETCH_ASSOC)['active_users'] ?? 0;
 
 try {
-    $stmt = $conn->query("SELECT 
+    $stmt = $conn->query("SELECT
         COUNT(*) AS total_requests,
         SUM(CASE WHEN approved = 1 THEN 1 ELSE 0 END) AS total_approved,
         SUM(CASE WHEN approved = 0 OR approved IS NULL THEN 1 ELSE 0 END) AS total_pending
@@ -24,11 +24,11 @@ try {
 
 try {
     $stmt = $conn->prepare("
-        SELECT 
+        SELECT
             first_name,last_name,username, email, mobile, business_name, role_id, created_at, profile_image,
 
             (SELECT role_name FROM roles WHERE id = users.role_id LIMIT 1) AS role_name
-        FROM users 
+        FROM users
         WHERE id = :user_id
         LIMIT 1
     ");

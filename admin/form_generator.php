@@ -1,7 +1,7 @@
 <?php
     session_start();
     header("Cache-Control: no-cache, no-store, must-revalidate");
-    header("Pragma: no-cache"); 
+    header("Pragma: no-cache");
     header("Expires: 0");
 
     $isGoogleLogin = isset($_SESSION['auth_method']) && $_SESSION['auth_method'] === 'google';
@@ -38,8 +38,8 @@
                                                                                         unset($_SESSION['error']); ?></div>
                             <?php endif; ?>
 
-                            <form method="post" action="crud/save_form.php" id="feedbackForm">
-                            <?php if ($_SESSION['role_id'] == 1 || $_SESSION['role_id'] == 2): ?>    
+                            <form method="post" action="crud/save_form.php" id="feedbackForm" enctype="multipart/form-data">
+                            <?php if ($_SESSION['role_id'] == 1 || $_SESSION['role_id'] == 2): ?>
                             <div class="row">
                                     <div class="col-md-8 mb-3">
                                         <label class="form-label">Created for</label>
@@ -67,7 +67,7 @@
                                                 echo '<option value="">No users available</option>';
                                             }
                                             ?>
-                                        </select>            
+                                        </select>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <div id="profileImagePreview" style="margin-top:10px; display:none; border:1px solid #ccc; border-radius:8px; padding:5px;">

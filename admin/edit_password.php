@@ -30,9 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     $email = $_SESSION['reset_email'];
-    $hashed = password_hash($password, PASSWORD_DEFAULT);
+    // Store password as plain text
     $stmt = $conn->prepare('UPDATE users SET password = ? WHERE email = ?');
-    if ($stmt->execute([$hashed, $email])) {
+    if ($stmt->execute([$password, $email])) {
         unset($_SESSION['reset_email']);
         $_SESSION['reset_success'] = 'Password updated successfully. You can now log in.';
         header('Location: login.php');

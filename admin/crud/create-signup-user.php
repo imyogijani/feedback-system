@@ -2,9 +2,7 @@
 session_start();
 include('../config/config.php');
 
-
-try {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $firstname = trim($_POST['firstname']);
         $lastname  = trim($_POST['lastname']);
         $username  = trim($_POST['username']);
@@ -35,6 +33,7 @@ try {
             exit();
         }
 
+    try {
         // Check existing user
         $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username OR email = :email");
         $stmt->execute(['username' => $username, 'email' => $email]);
@@ -50,7 +49,7 @@ try {
         if ($business_type === 'Other' && isset($_POST['other_business_type'])) {
             $business_type = trim($_POST['other_business_type']);
         }
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        // Store password as plain text
         $insertUser = $conn->prepare("
             INSERT INTO users (first_name, last_name, username, email, mobile, business_name, business_type, password, role_id, created_at)
             VALUES (:first_name, :last_name, :username, :email, :mobile, :business_name, :business_type, :password, 3, NOW())
@@ -63,14 +62,22 @@ try {
             'mobile'     => $mobile,
             'business_name' => $business_name,
             'business_type' => $business_type,
-            'password'   => $hashedPassword
+            'password'   => $password // Plain text password
         ]);
 
-        // Easebuzz payment removed. Registration completes after DB insert.
+        // Registration completes after DB insert
         $_SESSION['success_message'] = "✅ Registration successful! You can now log in.";
         header("Location: ../login.php");
         exit();
-    }
+
+    } catch (PDOException $e) {
+        $_SESSION['alert_message'] = "❌ DB Error: " . $e->getMessage();
+        header("Location: ../register.php");
+        exit();
+    } catch (Exception $e) {
+        $_SESSION['alert_message'] = "❌ Error: " . $e->getMessage();
+        header("Location: ../register.php");
+        exit();
 } catch (PDOException $e) {
     $_SESSION['alert_message'] = "❌ DB Error: " . $e->getMessage();
     header("Location: ../register.php");
@@ -79,5 +86,6 @@ try {
     $_SESSION['alert_message'] = "❌ Error: " . $e->getMessage();
     header("Location: ../register.php");
     exit();
+}
 }
 ?>
