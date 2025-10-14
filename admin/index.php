@@ -6,7 +6,7 @@ $user_id = $_SESSION['user_id'] ?? 0;
 
 // D:\xampp\htdocs\feedback-system\admin\dashboard.php
 
-header("Cache-Control: no-cache, no-store, must-revalidate"); 
+header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
@@ -41,16 +41,50 @@ try {
 
     // Get paginated forms with creator info
     $stmt = $conn->prepare("
-        SELECT f.id, f.title, f.created_at, u.username AS created_by, u.firebase_uid 
-        FROM forms_combined f 
-        LEFT JOIN users u ON f.created_by = u.id 
-        ORDER BY f.created_at DESC 
+        SELECT f.id, f.title, f.created_at, u.username AS created_by, u.firebase_uid
+        FROM forms_combined f
+        LEFT JOIN users u ON f.created_by = u.id
+        ORDER BY f.created_at DESC
         LIMIT :limit OFFSET :offset
     ");
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     $formList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Get dashboard statistics
+    // Total users count
+    $stmt = $conn->query("SELECT COUNT(*) AS total FROM users");
+    $totalUsers = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+    // Active users count (users who have logged in within last 30 days)
+    $stmt = $conn->query("SELECT COUNT(*) AS active FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+    $activeUsers = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
+
+    // Demo requests data
+    $demoData = [
+        'total_requests' => 0,
+        'total_approved' => 0,
+        'total_pending' => 0
+    ];
+
+    // Check if demo_requests table exists and get data
+    try {
+        $stmt = $conn->query("SHOW TABLES LIKE 'demo_requests'");
+        if ($stmt->rowCount() > 0) {
+            $stmt = $conn->query("SELECT COUNT(*) AS total FROM demo_requests");
+            $demoData['total_requests'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+            $stmt = $conn->query("SELECT COUNT(*) AS approved FROM demo_requests WHERE status = 'approved'");
+            $demoData['total_approved'] = $stmt->fetch(PDO::FETCH_ASSOC)['approved'];
+
+            $stmt = $conn->query("SELECT COUNT(*) AS pending FROM demo_requests WHERE status = 'pending'");
+            $demoData['total_pending'] = $stmt->fetch(PDO::FETCH_ASSOC)['pending'];
+        }
+    } catch (PDOException $e) {
+        // Table might not exist, keep default values
+        error_log("Demo requests table error: " . $e->getMessage());
+    }
 } catch (PDOException $e) {
     error_log("Database error: " . $e->getMessage());
     $_SESSION['alert_message'] = "An error occurred while fetching the forms.";
@@ -159,27 +193,29 @@ require_once 'assets/inc/incHeader.php';
         .table-responsive {
             overflow-x: auto;
         }
-        
+
         .action-links {
             flex-wrap: wrap;
         }
     }
     .dashboard-card {
         border-radius: 14px;
-        padding: 20px;
+        padding: 24px 20px;
         color: #1f2937;
         text-align: center;
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
         transition: transform 0.2s, box-shadow 0.2s;
-        min-height: 200px;
+        min-height: 180px;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: space-between;
+        height: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .dashboard-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
     }
 
     .bg-palette-light {
@@ -244,10 +280,48 @@ require_once 'assets/inc/incHeader.php';
         color: #f9fafb;
     }
 
+    @media (max-width: 768px) {
+        .dashboard-card {
+            min-height: 160px;
+            padding: 20px 15px;
+        }
+
+        .dashboard-card h2 {
+            font-size: 1.8rem;
+        }
+
+        .dashboard-card h5 {
+            font-size: 1rem;
+        }
+    }
+
     @media (max-width: 576px) {
+        .dashboard-card {
+            min-height: 140px;
+            padding: 15px 12px;
+        }
+
         .dashboard-card h2 {
             font-size: 1.6rem;
         }
+
+        .dashboard-card h5 {
+            font-size: 0.9rem;
+        }
+
+        .dashboard-card .btn {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+        }
+    }
+
+    .row.g-4 {
+        margin: 0 -0.75rem;
+    }
+
+    .row.g-4 > * {
+        padding: 0 0.75rem;
+        margin-bottom: 1.5rem;
     }
 </style>
 
@@ -260,12 +334,12 @@ require_once 'assets/inc/incHeader.php';
                 <div class="content-wrapper">
                     <div class="container-xxl flex-grow-1 container-p-y">
                         <h1 class="mb-3">Admin Dashboard</h1>
-                       
+
                             <?php if (isset($_SESSION['role_id']) && in_array($_SESSION['role_id'], [1, 2])): ?>
                             <div class="row g-4 mb-4">
 
                                 <!-- Total Users Card -->
-                                <div class="col-md-3 col-lg-3">
+                                <div class="col-md-6 col-lg-4 col-xl-3">
                                     <div class="dashboard-card bg-palette-soft-blue">
                                         <h5>Total Users</h5>
                                         <h2><?= htmlspecialchars($totalUsers) ?></h2>
@@ -276,26 +350,56 @@ require_once 'assets/inc/incHeader.php';
                                 </div>
 
                                 <!-- Active Users Card -->
-                                <div class="col-md-3 col-lg-3">
+                                <div class="col-md-6 col-lg-4 col-xl-3">
                                     <div class="dashboard-card bg-palette-medium-blue">
                                         <h5>Active Users</h5>
                                         <h2><?= htmlspecialchars($activeUsers) ?></h2>
                                         <a href="active_users.php" class="btn btn-light mt-2">View Active Users</a>
                                     </div>
                                 </div>
-                                <div class="col-md-3 col-lg-3">
-                                    <div class="dashboard-card bg-palette-medium-blue">
+
+                                <!-- Total Demo Requests Card -->
+                                <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="dashboard-card bg-palette-deep-blue">
                                         <h5>Total Demo Requests</h5>
                                         <h2><?= htmlspecialchars($demoData['total_requests']) ?></h2>
                                         <a href="demo_requests_list.php" class="btn btn-light mt-2">View All</a>
                                     </div>
                                 </div>
-                                <div class="col-md-3 col-lg-3">
-                                    <div class="dashboard-card bg-palette-medium-blue">
+
+                                <!-- Approved Requests Card -->
+                                <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="dashboard-card bg-palette-soft-blue">
                                         <h5>Approved Requests</h5>
-                                                <h2><?= htmlspecialchars($demoData['total_approved']) ?></h2>
-                                            <a href="demo_requests_list.php?approved=1" class="btn btn-light mt-2">Approved</a>
-                                                <!-- <a href="demo_requests_list.php?approved=1" class="btn btn-dark btn-sm mt-1 w-100">Approved</a> -->
+                                        <h2><?= htmlspecialchars($demoData['total_approved']) ?></h2>
+                                        <a href="demo_requests_list.php?approved=1" class="btn btn-light mt-2">View Approved</a>
+                                    </div>
+                                </div>
+
+                                <!-- Pending Requests Card -->
+                                <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="dashboard-card bg-palette-medium-blue">
+                                        <h5>Pending Requests</h5>
+                                        <h2><?= htmlspecialchars($demoData['total_pending']) ?></h2>
+                                        <a href="demo_requests_list.php?approved=0" class="btn btn-light mt-2">View Pending</a>
+                                    </div>
+                                </div>
+
+                                <!-- Total Forms Card -->
+                                <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="dashboard-card bg-palette-light">
+                                        <h5>Total Forms</h5>
+                                        <h2><?= htmlspecialchars($totalForms) ?></h2>
+                                        <a href="feedback_form_list.php" class="btn btn-dark mt-2">View Forms</a>
+                                    </div>
+                                </div>
+
+                                <!-- Analytics Card -->
+                                <div class="col-md-6 col-lg-4 col-xl-3">
+                                    <div class="dashboard-card bg-palette-deep-blue">
+                                        <h5>Analytics</h5>
+                                        <h2><i class="fas fa-chart-bar"></i></h2>
+                                        <a href="analytics.php" class="btn btn-light mt-2">View Analytics</a>
                                     </div>
                                 </div>
 
@@ -343,9 +447,9 @@ require_once 'assets/inc/incHeader.php';
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php 
+                                        <?php
                                         $serial = $offset + 1;
-                                        foreach ($formList as $form): 
+                                        foreach ($formList as $form):
                                         ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($serial++) ?></td>
@@ -358,27 +462,27 @@ require_once 'assets/inc/incHeader.php';
                                                     <?php endif; ?>
                                                 </td>
                                                 <td class="action-links">
-                                                    <a href="edit_form.php?id=<?= htmlspecialchars($form['id']) ?>" 
+                                                    <a href="edit_form.php?id=<?= htmlspecialchars($form['id']) ?>"
                                                        class="btn btn-sm" title="Edit">
                                                         <i class="fa-solid fa-pen-to-square" style="color: #007bff;"></i>
                                                     </a>
-                                                    <a href="delete_form.php?id=<?= htmlspecialchars($form['id']) ?>" 
+                                                    <a href="delete_form.php?id=<?= htmlspecialchars($form['id']) ?>"
                                                        class="btn btn-sm"
-                                                       title="Delete" 
+                                                       title="Delete"
                                                        onclick="return confirm('Are you sure you want to delete this form? This action cannot be undone.')">
                                                         <i class="fa-solid fa-trash" style="color: #dc3545;"></i>
                                                     </a>
-                                                    <a href="publish_form.php?id=<?= htmlspecialchars($form['id']) ?>" 
+                                                    <a href="publish_form.php?id=<?= htmlspecialchars($form['id']) ?>"
                                                        class="btn btn-sm"
                                                        title="Publish">
                                                         <i class="fa-solid fa-upload" style="color: #28a745;"></i>
                                                     </a>
-                                                    <a href="preview_form.php?id=<?= htmlspecialchars($form['id']) ?>" 
+                                                    <a href="preview_form.php?id=<?= htmlspecialchars($form['id']) ?>"
                                                        class="btn btn-sm"
                                                        title="Preview">
                                                         <i class="fa-solid fa-eye" style="color: #007bff;"></i>
                                                     </a>
-                                                    <a href="form_responses.php?form_id=<?= htmlspecialchars($form['id']) ?>" 
+                                                    <a href="form_responses.php?form_id=<?= htmlspecialchars($form['id']) ?>"
                                                        class="btn btn-sm"
                                                        title="View Responses">
                                                         <i class="fa-solid fa-list-check" style="color: #ff9800;"></i>
@@ -394,7 +498,7 @@ require_once 'assets/inc/incHeader.php';
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             <?php if ($totalPages > 1): ?>
                                 <div style="margin-top: 20px;">
                                     <nav aria-label="Page navigation">
@@ -404,11 +508,11 @@ require_once 'assets/inc/incHeader.php';
                                                     <a class="page-link" href="?page=1" title="First page">&laquo;</a>
                                                 </li>
                                             <?php endif; ?>
-                                            
+
                                             <?php
                                             $start = max(1, min($page - 2, $totalPages - 4));
                                             $end = min($totalPages, max(5, $page + 2));
-                                            
+
                                             for ($i = $start; $i <= $end; $i++):
                                             ?>
                                                 <li class="page-item <?= $i == $page ? 'active' : '' ?>">
@@ -448,7 +552,7 @@ require_once 'assets/inc/incHeader.php';
         <div class="layout-overlay layout-menu-toggle"></div>
     </div>
 
- 
+
 
 
 

@@ -2,7 +2,7 @@
 session_start();
 // D:\xampp\htdocs\feedback-system\admin\active_users.php
 
-header("Cache-Control: no-cache, no-store, must-revalidate"); 
+header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
@@ -80,9 +80,9 @@ try {
                                         <?php foreach ($activeUsers as $user): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($serial++) ?></td>
-                                                <td><?= htmlspecialchars($user['username']) ?></td>
-                                                <td><?= htmlspecialchars($user['email']) ?></td>
-                                                <td><?= htmlspecialchars($user['mobile']) ?></td>
+                                                <td><?= htmlspecialchars($user['username'] ?? '') ?></td>
+                                                <td><?= htmlspecialchars($user['email'] ?? '') ?></td>
+                                                <td><?= htmlspecialchars($user['mobile'] ?? 'N/A') ?></td>
                                                 <td><?= htmlspecialchars($user['role_name'] ?? 'N/A') ?></td>
                                                 <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($user['created_at']))) ?></td>
                                             </tr>

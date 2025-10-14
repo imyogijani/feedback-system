@@ -31,23 +31,59 @@
                         <!-- Content -->
                         <div class="container-xxl flex-grow-1 container-p-y">
                             <!-- Your page content goes here -->
-                            <h3 class="text-center title">Create Feedback Form</h3>
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h2 class="fw-bold text-primary mb-1">
+                                        <i class="fas fa-clipboard-list me-2"></i>Create Feedback Form
+                                    </h2>
+                                    <p class="text-muted mb-0">Design and customize your feedback form with multiple question types</p>
+                                </div>
+                                <div class="text-end d-flex align-items-center gap-3">
+                                    <button type="button" class="btn btn-outline-success btn-lg px-4 py-2" onclick="openTemplateModal()" title="Build form using pre-designed templates">
+                                        <i class="fas fa-layer-group me-2"></i>Form Build from Template
+                                    </button>
+                                    <span class="badge bg-light text-primary px-3 py-2">
+                                        <i class="fas fa-magic me-1"></i>Form Builder
+                                    </span>
+                                </div>
+                            </div>
 
                             <?php if (isset($_SESSION['error'])): ?>
-                                <div class="alert alert-danger" id="form-limit-alert"><?= $_SESSION['error'];
-                                                                                        unset($_SESSION['error']); ?></div>
+                                <div class="alert alert-danger alert-dismissible fade show" id="form-limit-alert">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
                             <?php endif; ?>
 
-                            <form method="post" action="crud/save_form.php" id="feedbackForm" enctype="multipart/form-data">
-                            <?php if ($_SESSION['role_id'] == 1 || $_SESSION['role_id'] == 2): ?>
-                            <div class="row">
-                                    <div class="col-md-8 mb-3">
-                                        <label class="form-label">Created for</label>
-                                        <select class="form-select" name="created_for" id="businessNameSelect"  onchange="showProfileImage()">
+                            <div class="card shadow-sm border-0 mb-4">
+                                <div class="card-body p-4">
+                                    <form method="post" action="crud/save_form.php" id="feedbackForm" enctype="multipart/form-data">
+                                    <?php if ($_SESSION['role_id'] == 1 || $_SESSION['role_id'] == 2): ?>
+                                    <!-- Admin/Moderator Section -->
+                                    <div class="row mb-4">
+                                        <div class="col-12">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-primary rounded-circle p-2 me-3">
+                                                    <i class="fas fa-user-tie text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <h5 class="mb-0 text-primary">Assignment Settings</h5>
+                                                    <small class="text-muted">Configure form ownership and branding</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                            <div class="col-md-8 mb-3">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="fas fa-building me-2 text-primary"></i>Created for
+                                                </label>
+                                                <select class="form-select shadow-sm" name="created_for" id="businessNameSelect" onchange="handleBusinessSelection()">
                                             <option value="">Select business name</option>
                                             <?php
                                             // Fetch users for dropdown (with profile image)
-                                            $userStmt = $conn->prepare("SELECT id, business_name, profile_image FROM users WHERE  business_name IS NOT NULL AND business_name != ''");
+                                            $userStmt = $conn->prepare("SELECT id, business_name, profile_image FROM users WHERE business_name IS NOT NULL AND business_name != ''");
                                             $userStmt->execute();
                                             $hasUser = false;
                                             while ($user = $userStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -63,99 +99,334 @@
                                                 echo '<option value="' . htmlspecialchars($user['id']) . '" data-img="' . $imgAttr . '">' . $label . '</option>';
                                                 $hasUser = true;
                                             }
-                                            if (!$hasUser) {
-                                                echo '<option value="">No users available</option>';
-                                            }
                                             ?>
+                                            <option value="custom" data-img="">
+                                                <i class="fas fa-plus me-2"></i>🏢 Not from this list (Enter manually)
+                                            </option>
                                         </select>
                                     </div>
                                     <div class="col-md-4 mb-3">
-                                        <div id="profileImagePreview" style="margin-top:10px; display:none; border:1px solid #ccc; border-radius:8px; padding:5px;">
-                                            <img id="profileImgTag" src="" alt="Profile Image" style="max-width:100px; max-height:100px; border-radius:8px; border:1px solid #ccc;" />
+                                        <div id="profileImagePreview" class="text-center" style="margin-top:35px; display:none;">
+                                            <div class="profile-preview-container">
+                                                <img id="profileImgTag" src="" alt="Profile Image" class="rounded-circle border border-3 border-primary shadow-sm" style="width:80px; height:80px; object-fit:cover;" />
+                                                <div class="mt-2">
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check me-1"></i>Selected
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                         <script>
-                                        function showProfileImage() {
+                                        function handleBusinessSelection() {
                                             var select = document.getElementById('businessNameSelect');
                                             var selected = select.options[select.selectedIndex];
+                                            var selectedValue = selected.value;
                                             var img = selected.getAttribute('data-img');
                                             var previewDiv = document.getElementById('profileImagePreview');
                                             var imgTag = document.getElementById('profileImgTag');
                                             var companyNameInput = document.getElementById('companyNameInput');
                                             var companyLogoInput = document.getElementById('companyLogoInput');
+                                            var manualEntrySection = document.getElementById('manualEntrySection');
+                                            var companyNameLabel = document.getElementById('companyNameLabel');
+                                            var companyLogoLabel = document.getElementById('companyLogoLabel');
 
-                                            if (img && img.trim() !== '' && img !== 'null') {
-                                                imgTag.src = img;
-                                                previewDiv.style.display = '';
-                                                companyNameInput.disabled = true;
-                                                companyLogoInput.disabled = true;
+                                            if (selectedValue === 'custom') {
+                                                // User selected "Not from this list"
+                                                previewDiv.style.display = 'none';
+                                                companyNameInput.disabled = false;
+                                                companyLogoInput.disabled = false;
+                                                companyNameInput.required = true;
+                                                companyNameInput.focus();
+
+                                                // Update labels to indicate manual entry
+                                                companyNameLabel.innerHTML = '<i class="fas fa-edit me-2 text-primary"></i>Company Name <span class="text-danger">*</span>';
+                                                companyLogoLabel.innerHTML = '<i class="fas fa-upload me-2 text-primary"></i>Company Logo <span class="text-danger">*</span>';
+
+                                                // Show helper text
+                                                if (!document.getElementById('customEntryHelper')) {
+                                                    var helperDiv = document.createElement('div');
+                                                    helperDiv.id = 'customEntryHelper';
+                                                    helperDiv.className = 'alert alert-info mt-2';
+                                                    helperDiv.innerHTML = '<i class="fas fa-info-circle me-2"></i><strong>Custom Entry Mode:</strong> Please enter the company name and upload a logo manually.';
+                                                    manualEntrySection.insertBefore(helperDiv, manualEntrySection.firstChild);
+                                                }
+
+                                            } else if (selectedValue && selectedValue !== '') {
+                                                // User selected an existing business
+                                                if (img && img.trim() !== '' && img !== 'null') {
+                                                    imgTag.src = img;
+                                                    previewDiv.style.display = '';
+                                                    companyNameInput.disabled = true;
+                                                    companyLogoInput.disabled = true;
+                                                    companyNameInput.required = false;
+                                                } else {
+                                                    previewDiv.style.display = 'none';
+                                                    companyNameInput.disabled = false;
+                                                    companyLogoInput.disabled = false;
+                                                    companyNameInput.required = false;
+                                                }
+
+                                                // Reset labels
+                                                companyNameLabel.innerHTML = '<i class="fas fa-building me-2 text-primary"></i>Company Name';
+                                                companyLogoLabel.innerHTML = '<i class="fas fa-image me-2 text-primary"></i>Company Logo';
+
+                                                // Remove helper text
+                                                var helperDiv = document.getElementById('customEntryHelper');
+                                                if (helperDiv) {
+                                                    helperDiv.remove();
+                                                }
+
                                             } else {
+                                                // No selection made
                                                 imgTag.src = '';
                                                 previewDiv.style.display = 'none';
                                                 companyNameInput.disabled = false;
                                                 companyLogoInput.disabled = false;
+                                                companyNameInput.required = false;
+
+                                                // Reset labels
+                                                companyNameLabel.innerHTML = '<i class="fas fa-building me-2 text-primary"></i>Company Name';
+                                                companyLogoLabel.innerHTML = '<i class="fas fa-image me-2 text-primary"></i>Company Logo';
+
+                                                // Remove helper text
+                                                var helperDiv = document.getElementById('customEntryHelper');
+                                                if (helperDiv) {
+                                                    helperDiv.remove();
+                                                }
                                             }
                                         }
-                                        // Show image if already selected on page load (edit mode)
-                                        document.addEventListener('DOMContentLoaded', showProfileImage);
+
+                                        // Handle manual logo upload preview
+                                        function handleLogoUpload(input) {
+                                            var previewDiv = document.getElementById('manualLogoPreview');
+                                            var previewImg = document.getElementById('manualLogoImg');
+
+                                            if (input.files && input.files[0]) {
+                                                var reader = new FileReader();
+                                                reader.onload = function(e) {
+                                                    previewImg.src = e.target.result;
+                                                    previewDiv.style.display = 'block';
+                                                };
+                                                reader.readAsDataURL(input.files[0]);
+                                            } else {
+                                                previewDiv.style.display = 'none';
+                                            }
+                                        }
+
+                                        // Add event listener for logo upload
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            handleBusinessSelection();
+
+                                            var logoInput = document.getElementById('companyLogoInput');
+                                            if (logoInput) {
+                                                logoInput.addEventListener('change', function() {
+                                                    handleLogoUpload(this);
+                                                });
+                                            }
+
+                                            // Form validation for custom entry
+                                            var form = document.getElementById('feedbackForm');
+                                            if (form) {
+                                                form.addEventListener('submit', function(e) {
+                                                    var businessSelect = document.getElementById('businessNameSelect');
+                                                    var companyNameInput = document.getElementById('companyNameInput');
+                                                    var companyLogoInput = document.getElementById('companyLogoInput');
+
+                                                    if (businessSelect.value === 'custom') {
+                                                        if (!companyNameInput.value.trim()) {
+                                                            e.preventDefault();
+                                                            companyNameInput.focus();
+                                                            companyNameInput.style.borderColor = '#dc3545';
+
+                                                            // Show error message
+                                                            var existingError = document.getElementById('companyNameError');
+                                                            if (existingError) existingError.remove();
+
+                                                            var errorDiv = document.createElement('div');
+                                                            errorDiv.id = 'companyNameError';
+                                                            errorDiv.className = 'text-danger mt-1 small';
+                                                            errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Company name is required when selecting "Not from this list"';
+                                                            companyNameInput.parentNode.appendChild(errorDiv);
+
+                                                            setTimeout(function() {
+                                                                companyNameInput.style.borderColor = '';
+                                                                if (errorDiv) errorDiv.remove();
+                                                            }, 3000);
+
+                                                            return false;
+                                                        }
+
+                                                        if (!companyLogoInput.files || !companyLogoInput.files[0]) {
+                                                            e.preventDefault();
+                                                            companyLogoInput.focus();
+                                                            companyLogoInput.style.borderColor = '#dc3545';
+
+                                                            // Show error message
+                                                            var existingError = document.getElementById('companyLogoError');
+                                                            if (existingError) existingError.remove();
+
+                                                            var errorDiv = document.createElement('div');
+                                                            errorDiv.id = 'companyLogoError';
+                                                            errorDiv.className = 'text-danger mt-1 small';
+                                                            errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i>Company logo is required when selecting "Not from this list"';
+                                                            companyLogoInput.parentNode.appendChild(errorDiv);
+
+                                                            setTimeout(function() {
+                                                                companyLogoInput.style.borderColor = '';
+                                                                if (errorDiv) errorDiv.remove();
+                                                            }, 3000);
+
+                                                            return false;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        });
                                         </script>
                                         </div>
                                 </div>
-                                <div class="row">
+                                <div class="row" id="manualEntrySection">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Company Name</label>
-                                        <input type="text" class="form-control" name="company_name" id="companyNameInput">
+                                        <label class="form-label fw-semibold" id="companyNameLabel">
+                                            <i class="fas fa-building me-2 text-primary"></i>Company Name
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" name="company_name" id="companyNameInput" placeholder="Enter company name">
+                                        <small class="text-muted">This will be used if no business is selected from the dropdown</small>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Company Logo</label>
-                                        <input type="file" class="form-control" name="company_logo" id="companyLogoInput">
+                                        <label class="form-label fw-semibold" id="companyLogoLabel">
+                                            <i class="fas fa-image me-2 text-primary"></i>Company Logo
+                                        </label>
+                                        <input type="file" class="form-control shadow-sm" name="company_logo" id="companyLogoInput" accept="image/*">
+                                        <small class="text-muted">Supported formats: JPG, PNG, GIF (Max: 2MB)</small>
+
+                                        <!-- Logo Preview for Manual Upload -->
+                                        <div id="manualLogoPreview" class="mt-2" style="display:none;">
+                                            <div class="text-center">
+                                                <img id="manualLogoImg" src="" alt="Logo Preview" class="rounded border border-2 border-primary shadow-sm" style="max-width:100px; max-height:100px; object-fit:cover;" />
+                                                <div class="mt-1">
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-image me-1"></i>Logo Preview
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <?php endif; ?>
+                                <!-- Form Configuration Section -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="bg-success rounded-circle p-2 me-3">
+                                                <i class="fas fa-cog text-white"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-0 text-success">Form Configuration</h5>
+                                                <small class="text-muted">Define your form's basic properties</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Form Type</label>
-                                        <select name="form_type" id="form_type" class="form-select">
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-tag me-2 text-success"></i>Form Type
+                                        </label>
+                                        <select name="form_type" id="form_type" class="form-select shadow-sm">
                                             <option>Select Option</option>
-                                            <option value="Suggestion">Suggestion</option>
-                                            <option value="Complaints">Complaints</option>
-                                            <option value="Feedback">Feedback</option>
+                                            <option value="Suggestion">📝 Suggestion</option>
+                                            <option value="Complaints">⚠️ Complaints</option>
+                                            <option value="Feedback">💬 Feedback</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Form Title</label>
-                                        <input type="text" class="form-control" name="title" required>
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-heading me-2 text-success"></i>Form Title
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" name="title" required placeholder="Enter form title">
                                     </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Description</label>
-                                    <textarea class="form-control" name="description"></textarea>
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-align-left me-2 text-success"></i>Description
+                                    </label>
+                                    <textarea class="form-control shadow-sm" name="description" rows="3" placeholder="Describe the purpose of this form"></textarea>
                                 </div>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="firstname" value="1">
-                                        <label class="form-check-label">Enable First Name</label>
+                                <!-- User Information Section -->
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-info rounded-circle p-2 me-3">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-0 text-info">User Information Fields</h5>
+                                            <small class="text-muted">Select which user details to collect</small>
+                                        </div>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="lastname" value="1">
-                                        <label class="form-check-label">Enable Last Name</label>
+                                    <div class="row">
+                                        <div class="col-md-3 col-sm-6 mb-2">
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="checkbox" name="firstname" value="1" id="firstname">
+                                                <label class="form-check-label fw-semibold" for="firstname">
+                                                    <i class="fas fa-user me-2 text-info"></i>First Name
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-sm-6 mb-2">
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="checkbox" name="lastname" value="1" id="lastname">
+                                                <label class="form-check-label fw-semibold" for="lastname">
+                                                    <i class="fas fa-user me-2 text-info"></i>Last Name
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-sm-6 mb-2">
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="checkbox" name="email" value="1" id="email">
+                                                <label class="form-check-label fw-semibold" for="email">
+                                                    <i class="fas fa-envelope me-2 text-info"></i>Email
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-sm-6 mb-2">
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="checkbox" name="number" value="1" id="number">
+                                                <label class="form-check-label fw-semibold" for="number">
+                                                    <i class="fas fa-phone me-2 text-info"></i>Phone Number
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="email" value="1">
-                                        <label class="form-check-label">Enable Email</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="number" value="1">
-                                        <label class="form-check-label">Enable Phone Number</label>
+                                </div>
+
+                                <!-- Questions Section -->
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-warning rounded-circle p-2 me-3">
+                                                <i class="fas fa-question text-white"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-0 text-warning">Form Questions</h5>
+                                                <small class="text-muted">Design your form with multiple question types</small>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-light text-warning px-3 py-2">
+                                                <i class="fas fa-grip-vertical me-1"></i>Drag to Reorder
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div id="questions">
             <!-- Default Question Section with Add Question button for sub-questions -->
-            <section class="question-section mb-3" draggable="true" ondragstart="dragSection(event)" ondragover="allowSectionDrop(event)" ondrop="dropSection(event)">
+            <section class="question-section mb-4" draggable="true" ondragstart="dragSection(event)" ondragover="allowSectionDrop(event)" ondrop="dropSection(event)">
                 <div class="section-header custom-section-header d-flex justify-content-between align-items-center mb-2">
                     <div class="d-flex align-items-center">
                         <span class="section-badge me-2">1</span>
-                        <input type="text" class="form-control fw-bold section-title-input" name="section_titles[]" value="" placeholder="Add Section Name" style="width: 180px; font-weight: bold; font-size: 1.1rem; background: transparent; border: 2px solid #007bff; outline: none; padding: 0; margin: 0; color: #333; box-shadow: 0 0 0 2px #b3d7ff; transition: box-shadow 0.2s, border-color 0.2s;" onfocus="this.style.background='#fff'; this.style.border='2px solid #0056b3'; this.style.boxShadow='0 0 0 3px #80bdff';" onblur="this.style.background='transparent'; this.style.border='2px solid #007bff'; this.style.boxShadow='0 0 0 2px #b3d7ff';" />
+                        <input type="text" class="form-control fw-bold section-title-input" name="section_titles[]" value="" placeholder="Add Section Name" style="width: 200px;" />
                     </div>
                     <span class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>
                 </div>
@@ -191,7 +462,7 @@
                         <!-- Question-specific fields will be added here -->
                     </div>
                     <div class="text-end mt-2">
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addSubQuestion(this, 1)"><i class="fas fa-plus"></i> Add Question</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addSubQuestion(this, 1, this.closest('.question-section'))"><i class="fas fa-plus"></i> Add Question</button>
                     </div>
                 </div>
             </section>
@@ -227,32 +498,218 @@
             });
             </script>
                                 </div>
-                <div class="mt-3">
-                    <button type="button" class="btn btn-secondary" onclick="addSection()">+ Add Section</button>
-
                 </div>
-                <div   div class="mt-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="enableThankYou" name="enable_thankyou" value="1" onchange="toggleThankYouMessage()">
-                        <label class="form-check-label" for="enableThankYou">Enable Custom Thank You Message</label>
+
+                <!-- Add Section Button -->
+                <div class="text-center mb-4">
+                    <button type="button" class="btn btn-outline-primary btn-lg px-4 py-2" onclick="addSection()">
+                        <i class="fas fa-plus-circle me-2"></i>Add New Section
+                    </button>
+                </div>
+
+                <!-- Completion Settings -->
+                <div class="mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-purple rounded-circle p-2 me-3" style="background: #6f42c1;">
+                            <i class="fas fa-check-circle text-white"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0" style="color: #6f42c1;">Completion Settings</h5>
+                            <small class="text-muted">Configure post-submission behavior</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="enableThankYou" name="enable_thankyou" value="1" onchange="toggleThankYouMessage()">
+                                <label class="form-check-label fw-semibold" for="enableThankYou">
+                                    <i class="fas fa-heart me-2" style="color: #6f42c1;"></i>Enable Custom Thank You Message
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="allow_another_response" id="allowAnotherResponse" value="1">
+                                <label class="form-check-label fw-semibold" for="allowAnotherResponse">
+                                    <i class="fas fa-redo me-2" style="color: #6f42c1;"></i>Allow Multiple Responses
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4" id="thankYouMessageContainer" style="display: none;">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-comment me-2" style="color: #6f42c1;"></i>Custom Thank You Message
+                        </label>
+                        <textarea class="form-control shadow-sm" name="thankyou_message" id="thankyouMessageField" rows="3" placeholder="Enter your custom thank you message here..."></textarea>
+                        <small class="text-muted">This message will be displayed after form submission</small>
                     </div>
                 </div>
 
-                <div class="mb-3" id="thankYouMessageContainer" style="display: none;">
-                    <label class="form-label">Custom Thank You Message</label>
-                    <textarea class="form-control" name="thankyou_message" id="thankyouMessageField" placeholder="Enter your custom thank you message here..."></textarea>
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between align-items-center pt-4 border-top">
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Remember to preview your form before publishing
+                        </small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary px-4">
+                            <i class="fas fa-eye me-2"></i>Preview
+                        </button>
+                        <button type="submit" class="btn btn-primary px-4 py-2">
+                            <i class="fas fa-save me-2"></i>Create Form
+                        </button>
+                    </div>
                 </div>
-                <div class="form-check mt-3">
-    <input class="form-check-input" type="checkbox" name="allow_another_response" id="allowAnotherResponse" value="1">
-    <label class="form-check-label" for="allowAnotherResponse">
-        Do you want to allow another response?
-    </label>
-</div>
-
-                <div class="mt-3">
-                    <button type="submit" class="btn btn-primary">Create Form</button>
-                </div>
-                            </form>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <!-- Template Modal -->
+                            <div class="modal fade" id="templateModal" tabindex="-1" aria-labelledby="templateModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-xl">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-gradient-success text-white">
+                                            <h5 class="modal-title" id="templateModalLabel">
+                                                <i class="fas fa-layer-group me-2"></i>Build Form from Template
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="row mb-4">
+                                                <div class="col-12">
+                                                    <h6 class="text-success mb-3">
+                                                        <i class="fas fa-magic me-2"></i>Choose a template to get started quickly
+                                                    </h6>
+                                                    <p class="text-muted">Select from our pre-designed templates to create professional feedback forms in seconds.</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row g-4" id="templateContainer">
+                                                <!-- Customer Satisfaction Template -->
+                                                <div class="col-lg-4 col-md-6">
+                                                    <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('customer_satisfaction')">
+                                                        <div class="card-header bg-primary text-white text-center py-3">
+                                                            <i class="fas fa-smile fa-2x mb-2"></i>
+                                                            <h6 class="mb-0">Customer Satisfaction</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <p class="text-muted small mb-3">Perfect for measuring customer experience and satisfaction levels.</p>
+                                                            <div class="template-features">
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-star"></i> Rating Questions</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-comment"></i> Feedback</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-user"></i> Contact Info</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Product Feedback Template -->
+                                                <div class="col-lg-4 col-md-6">
+                                                    <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('product_feedback')">
+                                                        <div class="card-header bg-info text-white text-center py-3">
+                                                            <i class="fas fa-box fa-2x mb-2"></i>
+                                                            <h6 class="mb-0">Product Feedback</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <p class="text-muted small mb-3">Collect detailed feedback about your products and services.</p>
+                                                            <div class="template-features">
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-list"></i> Multiple Choice</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-thumbs-up"></i> Ratings</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-edit"></i> Text Areas</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Event Feedback Template -->
+                                                <div class="col-lg-4 col-md-6">
+                                                    <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('event_feedback')">
+                                                        <div class="card-header bg-warning text-white text-center py-3">
+                                                            <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                                                            <h6 class="mb-0">Event Feedback</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <p class="text-muted small mb-3">Get insights about events, workshops, and conferences.</p>
+                                                            <div class="template-features">
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-calendar"></i> Date Fields</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-star"></i> Experience Rating</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-users"></i> Attendee Info</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Employee Feedback Template -->
+                                                <div class="col-lg-4 col-md-6">
+                                                    <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('employee_feedback')">
+                                                        <div class="card-header bg-secondary text-white text-center py-3">
+                                                            <i class="fas fa-users fa-2x mb-2"></i>
+                                                            <h6 class="mb-0">Employee Feedback</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <p class="text-muted small mb-3">Internal feedback for workplace improvement and culture.</p>
+                                                            <div class="template-features">
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-briefcase"></i> Work Environment</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-chart-line"></i> Performance</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-lightbulb"></i> Suggestions</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Service Quality Template -->
+                                                <div class="col-lg-4 col-md-6">
+                                                    <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('service_quality')">
+                                                        <div class="card-header bg-danger text-white text-center py-3">
+                                                            <i class="fas fa-headset fa-2x mb-2"></i>
+                                                            <h6 class="mb-0">Service Quality</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <p class="text-muted small mb-3">Evaluate service quality and customer support effectiveness.</p>
+                                                            <div class="template-features">
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-clock"></i> Response Time</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-medal"></i> Quality Rating</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-redo"></i> Follow-up</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- General Survey Template -->
+                                                <div class="col-lg-4 col-md-6">
+                                                    <div class="template-card card h-100 border-0 shadow-sm" onclick="selectTemplate('general_survey')">
+                                                        <div class="card-header bg-dark text-white text-center py-3">
+                                                            <i class="fas fa-clipboard-check fa-2x mb-2"></i>
+                                                            <h6 class="mb-0">General Survey</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <p class="text-muted small mb-3">A versatile template for any type of survey or feedback collection.</p>
+                                                            <div class="template-features">
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-question-circle"></i> Mixed Questions</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-list-ul"></i> Flexible Options</span>
+                                                                <span class="badge bg-light text-dark me-1 mb-1"><i class="fas fa-cogs"></i> Customizable</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="fas fa-times me-2"></i>Cancel
+                                            </button>
+                                            <button type="button" class="btn btn-success" onclick="applySelectedTemplate()" id="applyTemplateBtn" disabled>
+                                                <i class="fas fa-magic me-2"></i>Apply Selected Template
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                         </div>
                         <!-- / Content -->
  <?php require_once 'assets/inc/incFooter.php'; ?>
@@ -307,7 +764,7 @@
                     <div class="section-header custom-section-header d-flex justify-content-between align-items-center mb-2">
                         <div class="d-flex align-items-center">
                             <span class="section-badge me-2">${questionCounter}</span>
-                            <input type="text" class="form-control fw-bold section-title-input" name="section_titles[]" value="" style="width: 180px; font-weight: bold; font-size: 1.1rem; background: transparent; border: 2px solid #007bff; outline: none; padding: 0; margin: 0; color: #333; box-shadow: 0 0 0 2px #b3d7ff; transition: box-shadow 0.2s, border-color 0.2s;" onfocus="this.style.background='#fff'; this.style.border='2px solid #0056b3'; this.style.boxShadow='0 0 0 3px #80bdff';" onblur="this.style.background='transparent'; this.style.border='2px solid #007bff'; this.style.boxShadow='0 0 0 2px #b3d7ff';" placeholder="Add Section Name" />
+                            <input type="text" class="form-control fw-bold section-title-input" name="section_titles[]" value="" style="width: 200px;" placeholder="Add Section Name" />
                         </div>
                         <span class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>
                     </div>
@@ -596,12 +1053,27 @@ function removeQuestion(element) {
                 questionFieldsDiv.innerHTML = ''; // Clear existing fields
 
                 if (questionType === 'radio' || questionType === 'checkbox' || questionType === 'dropdown') {
+                    let iconHtml = '';
+                    if (questionType === 'radio') {
+                        iconHtml = `<span class="input-group-text"><input type="radio" disabled></span>`;
+                    } else if (questionType === 'checkbox') {
+                        iconHtml = `<span class="input-group-text"><input type="checkbox" disabled></span>`;
+                    } else if (questionType === 'dropdown') {
+                        iconHtml = `<span class="input-group-text"><i class="fas fa-caret-down"></i></span>`;
+                    }
+
                     questionFieldsDiv.innerHTML = `
                         <div class="mt-3">
                             <label class="form-label">Options</label>
                             <div id="optionsContainer${questionNumber}">
                                 <div class="input-group mb-2">
-                                    <input type="text" class="form-control" name="options[${globalIndex}][]" placeholder="Option text">
+                                    ${iconHtml}
+                                    <input type="text" class="form-control" name="options[${globalIndex}][]" placeholder="Option 1" value="Option 1">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="removeOption(this)">Remove</button>
+                                </div>
+                                <div class="input-group mb-2">
+                                    ${iconHtml}
+                                    <input type="text" class="form-control" name="options[${globalIndex}][]" placeholder="Option 2" value="Option 2">
                                     <button class="btn btn-outline-secondary" type="button" onclick="removeOption(this)">Remove</button>
                                 </div>
                             </div>
@@ -741,96 +1213,432 @@ function removeQuestion(element) {
                 </script>
 
         <!-- Add Font Awesome for icons -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
+            /* Enhanced Form Styling */
+            .card {
+                background: #fff;
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+                border: 1px solid #e3f2fd;
+            }
+
+            .form-control, .form-select {
+                border: 1px solid #e0e6ed;
+                border-radius: 8px;
+                padding: 0.75rem 1rem;
+                font-size: 0.95rem;
+                transition: all 0.3s ease;
+            }
+
+            .form-control:focus, .form-select:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+            }
+
+            .form-check-card {
+                padding: 0.75rem;
+                border: 1px solid #e9ecef;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+                background: #f8f9fa;
+            }
+
+            .form-check-card:hover {
+                background: #e3f2fd;
+                border-color: #007bff;
+            }
+
+            .form-check-input:checked + .form-check-label {
+                color: #007bff;
+            }
+
             .rating i {
                 cursor: pointer;
-                color: #ccc;
+                color: #dee2e6;
                 margin: 0 5px;
+                transition: all 0.2s ease;
+                font-size: 1.5rem;
             }
             .rating i:hover {
                 color: #ffc107;
+                transform: scale(1.1);
             }
+
+            /* Enhanced Question Section Styling */
             .question-section {
                 cursor: move;
-                border: 2px solid #b3b3b3;
-                border-radius: 10px;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-                margin: 1.5rem 0.75rem 1.5rem 0.75rem; /* top, right, bottom, left */
-                padding: 1.25rem 1.25rem 1rem 1.25rem;
-                transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-                background: #fff;
+                border: 2px solid #e9ecef;
+                border-radius: 16px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+                margin: 1.5rem 0;
+                padding: 1.5rem;
+                transition: all 0.3s ease;
+                background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .question-section:before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(90deg, #007bff, #28a745, #ffc107, #dc3545);
+                border-radius: 16px 16px 0 0;
+            }
+
+            .question-section:hover {
+                border-color: #007bff;
+                box-shadow: 0 6px 25px rgba(0,123,255,0.15);
+                transform: translateY(-2px);
             }
             .custom-section-header {
-                background: linear-gradient(90deg, #f5f7fa 0%, #c3cfe2 100%);
-                border-radius: 10px 10px 0 0;
-                padding: 0.75rem 1rem;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-                border-bottom: 1px solid #e0e0e0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 12px;
+                padding: 1rem 1.25rem;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+                border: none;
                 cursor: move;
+                margin: -0.5rem -0.5rem 1rem -0.5rem;
+                position: relative;
             }
+
+            .custom-section-header:before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+                border-radius: 12px;
+            }
+
             .section-badge {
-                display: inline-block;
-                background: #007bff;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,0.2);
                 color: #fff;
                 border-radius: 50%;
-                width: 32px;
-                height: 32px;
-                text-align: center;
-                line-height: 32px;
+                width: 40px;
+                height: 40px;
                 font-weight: bold;
                 font-size: 1.1rem;
-                margin-right: 8px;
-                box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+                margin-right: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                backdrop-filter: blur(10px);
+                border: 2px solid rgba(255,255,255,0.3);
             }
-            .section-title {
-                font-size: 1.1rem;
-                color: #333;
+
+            .section-title-input {
+                background: rgba(255,255,255,0.15) !important;
+                border: 2px solid rgba(255,255,255,0.3) !important;
+                color: #fff !important;
+                font-weight: 600 !important;
+                backdrop-filter: blur(10px);
             }
+
+            .section-title-input::placeholder {
+                color: rgba(255,255,255,0.8);
+            }
+
+            .section-title-input:focus {
+                background: rgba(255,255,255,0.25) !important;
+                border-color: rgba(255,255,255,0.6) !important;
+                box-shadow: 0 0 0 3px rgba(255,255,255,0.1) !important;
+            }
+
             .drag-handle {
-                color: #888;
-                font-size: 1.3rem;
+                color: rgba(255,255,255,0.8);
+                font-size: 1.4rem;
                 cursor: grab;
-                margin-left: 10px;
-                opacity: 0.7;
-                transition: opacity 0.2s;
+                transition: all 0.3s ease;
+                padding: 8px;
+                border-radius: 8px;
+                background: rgba(255,255,255,0.1);
             }
             .drag-handle:hover {
-                opacity: 1;
-                color: #007bff;
+                color: #fff;
+                background: rgba(255,255,255,0.2);
+                transform: scale(1.1);
             }
             .question-section .question-label {
-                font-weight: 500;
-                font-size: 1rem;
-                color: #444;
-                margin: 0.5rem 0.5rem 0.75rem 0.5rem;
-                display: block;
+                font-weight: 600;
+                font-size: 1.1rem;
+                color: #2c3e50;
+                margin: 0.75rem 0.75rem 1rem 0.75rem;
+                display: flex;
+                align-items: center;
+                padding: 0.5rem 0.75rem;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 8px;
+                border-left: 4px solid #007bff;
             }
-            .question-section .form-control {
-                margin: 0.5rem 0.5rem 0.75rem 0.5rem;
+
+            .question-section .question-label:before {
+                content: '\f059';
+                font-family: 'Font Awesome 6 Free';
+                font-weight: 900;
+                margin-right: 0.5rem;
+                color: #007bff;
             }
+
+            .question-section .form-control,
+            .question-section .form-select {
+                margin: 0.5rem 0.75rem 0.75rem 0.75rem;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+            }
+
+            .question-section .form-control:focus,
+            .question-section .form-select:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+            }
+
             .remove-btn {
-                margin-left: 8px;
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
             }
+
+            .remove-btn:hover {
+                background: #dc3545;
+                border-color: #dc3545;
+                transform: scale(1.1);
+            }
+
             .question-section.drag-over {
                 border: 2px dashed #007bff !important;
-                background: #e9f5ff;
-                box-shadow: 0 4px 16px rgba(0,123,255,0.08);
+                background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+                box-shadow: 0 8px 32px rgba(0,123,255,0.15);
+                transform: scale(1.02);
             }
+
             .question-section .input-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.5rem 0.5rem 0.5rem 0.5rem;
-}
-.question-section .input-group .form-control {
-    flex: 1 1 auto;
-    margin: 0;
-}
-.question-section .input-group .btn {
-    flex: 0 0 auto;
-    margin: 0;
-}
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin: 0.5rem 0.75rem 0.5rem 0.75rem;
+            }
+
+            .question-section .input-group .form-control {
+                flex: 1 1 auto;
+                margin: 0;
+            }
+
+            .question-section .input-group .btn {
+                flex: 0 0 auto;
+                margin: 0;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+            }
+
+            .question-section .input-group .btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+
+            /* Enhanced Button Styling */
+            .btn {
+                border-radius: 8px;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                border: none;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            }
+
+            .btn-outline-primary {
+                border: 2px solid #007bff;
+                color: #007bff;
+                background: transparent;
+            }
+
+            .btn-outline-primary:hover {
+                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                border-color: #007bff;
+            }
+
+            /* Profile Preview Styling */
+            .profile-preview-container {
+                padding: 1rem;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 12px;
+                border: 2px solid #e9ecef;
+            }
+
+            /* Switch Styling */
+            .form-check-input:checked {
+                background-color: #28a745;
+                border-color: #28a745;
+            }
+
+            .form-switch .form-check-input {
+                width: 3rem;
+                height: 1.5rem;
+            }
+
+            /* Alert Styling */
+            .alert {
+                border-radius: 12px;
+                border: none;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+
+            /* Custom Entry Styling */
+            #customEntryHelper {
+                border-left: 4px solid #17a2b8;
+                background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+                animation: slideDown 0.5s ease-out;
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Manual Logo Preview */
+            #manualLogoPreview {
+                animation: fadeIn 0.3s ease-out;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            /* Enhanced form states for custom entry */
+            .form-control:required {
+                border-left: 4px solid #dc3545;
+            }
+
+            .form-control:required:valid {
+                border-left: 4px solid #28a745;
+            }
+
+            /* Custom dropdown option styling */
+            option[value="custom"] {
+                background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+                font-weight: 600;
+            }
+
+            /* Responsive Design */
+            @media (max-width: 768px) {
+                .question-section {
+                    margin: 1rem 0;
+                    padding: 1rem;
+                }
+
+                .section-title-input {
+                    width: 150px !important;
+                    font-size: 0.9rem !important;
+                }
+
+                .section-badge {
+                    width: 32px;
+                    height: 32px;
+                    font-size: 0.9rem;
+                }
+
+                .custom-section-header {
+                    padding: 0.75rem 1rem;
+                }
+
+                .question-section .question-label {
+                    font-size: 1rem;
+                    margin: 0.5rem 0.5rem 0.75rem 0.5rem;
+                }
+
+                .question-section .form-control,
+                .question-section .form-select {
+                    margin: 0.5rem 0.5rem 0.75rem 0.5rem;
+                }
+
+                .question-section .input-group {
+                    margin: 0.5rem 0.5rem 0.5rem 0.5rem;
+                }
+
+                .d-flex.gap-2 {
+                    flex-direction: column;
+                    gap: 0.5rem !important;
+                }
+
+                .btn {
+                    width: 100%;
+                }
+            }
+
+            /* Animation for drag and drop */
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .question-section {
+                animation: slideIn 0.5s ease-out;
+            }
+
+            /* Smooth transitions for interactive elements */
+            * {
+                transition: all 0.3s ease;
+            }
+
+            /* Focus states */
+            .form-control:focus,
+            .form-select:focus,
+            .form-check-input:focus {
+                outline: none;
+                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            }
+
+            /* Custom scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: linear-gradient(135deg, #007bff, #0056b3);
+                border-radius: 4px;
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: linear-gradient(135deg, #0056b3, #004085);
+            }
         </style>
     </body>
 

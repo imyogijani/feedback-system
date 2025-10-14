@@ -45,14 +45,29 @@
     <div class="thankyou-container">
         <?php
         include('config/config.php');
-        // echo $_GET['form_id'];
-        $form_id = $_GET['form_id'];    // fetch thank you message from `forms` table:
-        $stmt = $conn->prepare("SELECT fc.thankyou_message, fc.allow_another_response, u.business_name 
+
+        // Validate form_id parameter
+        $form_id = $_GET['id'] ?? null;
+
+        if (!$form_id || !is_numeric($form_id)) {
+            echo '<div class="alert alert-danger">Error: Invalid or missing form ID.</div>';
+            exit;
+        }
+
+        $form_id = (int)$form_id; // Ensure it's an integer
+
+        // fetch thank you message from `forms` table:
+        $stmt = $conn->prepare("SELECT fc.thankyou_message, fc.allow_another_response, u.business_name
                         FROM forms_combined fc
                         JOIN users u ON fc.created_for = u.id
                         WHERE fc.id = ?");
         $stmt->execute([$form_id]);
         $form_data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$form_data) {
+            echo '<div class="alert alert-danger">Error: Form not found.</div>';
+            exit;
+        }
 
         // Debugging output
         // error_log("Debugging form_id: " . $form_id);

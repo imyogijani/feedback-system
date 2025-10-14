@@ -1,0 +1,14 @@
+# PHP Configuration for Apache
+# Add these lines to C:\Apache24\conf\httpd.conf
+
+# Load PHP module
+LoadModule php_module "C:/php/php8apache2_4.dll"
+
+# Configure PHP
+AddHandler application/x-httpd-php .php
+
+# Set PHP ini file location
+PHPIniDir "C:/php"
+
+# Add index.php to DirectoryIndex (if not already present)
+# DirectoryIndex index.php index.html
